@@ -1,0 +1,230 @@
+[
+  {
+    "name": "Packstation 102",
+    "lat": 49.791793,
+    "lon": 9.952744,
+    "address": "Rottendorfer Str. 27b, 97074 Würzburg"
+  },
+  {
+    "name": "Packstation 209",
+    "lat": 49.789565,
+    "lon": 9.945797,
+    "address": "Valentin-Becker-Str. 12, 97072 Würzburg"
+  },
+  {
+    "name": "Packstation 204",
+    "lat": 49.792792,
+    "lon": 9.961692,
+    "address": "Leo-Weismantel-Str. 1, 97074 Würzburg"
+  },
+  {
+    "name": "Packstation 203",
+    "lat": 49.788406,
+    "lon": 9.944708,
+    "address": "Zürnstr. 1, 97074 Würzburg"
+  },
+  {
+    "name": "Packstation 137",
+    "lat": 49.798144,
+    "lon": 9.956234,
+    "address": "Innere Aumühlstr. 1, 97076 Würzburg"
+  },
+  {
+    "name": "Packstation 208",
+    "lat": 49.788986,
+    "lon": 9.941184,
+    "address": "Friedenstr. 2, 97072 Würzburg"
+  },
+  {
+    "name": "Packstation 189",
+    "lat": 49.790803,
+    "lon": 9.967035,
+    "address": "Rottendorfer Str. 67, 97074 Würzburg"
+  },
+  {
+    "name": "Packstation 202",
+    "lat": 49.78558,
+    "lon": 9.963881,
+    "address": "Am Galgenberg 52, 97074 Würzburg"
+  },
+  {
+    "name": "Packstation 141",
+    "lat": 49.800924,
+    "lon": 9.941409,
+    "address": "Haugerglacisstr. 5a, 97080 Würzburg"
+  },
+  {
+    "name": "Packstation 103",
+    "lat": 49.804209,
+    "lon": 9.961668,
+    "address": "Bei der Neumühle 1, 97078 Würzburg"
+  },
+  {
+    "name": "Packstation 199",
+    "lat": 49.778043,
+    "lon": 9.94304,
+    "address": "Kantstr. 25, 97074 Würzburg"
+  },
+  {
+    "name": "Packstation 402",
+    "lat": 49.791272,
+    "lon": 9.930128,
+    "address": "Franziskanergasse 12, 97070 Würzburg"
+  },
+  {
+    "name": "Packstation 205",
+    "lat": 49.775387,
+    "lon": 9.960034,
+    "address": "Peter-Schneider-Str. 7, 97074 Würzburg"
+  },
+  {
+    "name": "Packstation 111",
+    "lat": 49.801792,
+    "lon": 9.933487,
+    "address": "Bahnhofplatz 2, 97070 Würzburg"
+  },
+  {
+    "name": "Packstation 120",
+    "lat": 49.776432,
+    "lon": 9.941463,
+    "address": "Randersackerer Str. 53, 97072 Würzburg"
+  },
+  {
+    "name": "Packstation 117",
+    "lat": 49.781072,
+    "lon": 9.977069,
+    "address": "Helläcker 1, 97218 Gerbrunn"
+  },
+  {
+    "name": "Packstation 194",
+    "lat": 49.79742,
+    "lon": 9.980276,
+    "address": "Nürnberger Str. 61, 97076 Würzburg"
+  },
+  {
+    "name": "Packstation 212",
+    "lat": 49.778417,
+    "lon": 9.933009,
+    "address": "Gartenstr. 16, 97072 Würzburg"
+  },
+  {
+    "name": "Packstation 193",
+    "lat": 49.810047,
+    "lon": 9.961499,
+    "address": "Versbacher Str. 75, 97078 Würzburg"
+  },
+  {
+    "name": "Packstation 211",
+    "lat": 49.774449,
+    "lon": 9.936495,
+    "address": "Königsberger Str. 32, 97072 Würzburg"
+  },
+  {
+    "name": "Packstation 201",
+    "lat": 49.811317,
+    "lon": 9.957374,
+    "address": "Straubmühlweg 11, 97078 Würzburg"
+  },
+  {
+    "name": "Packstation 118",
+    "lat": 49.787358,
+    "lon": 9.984459,
+    "address": "Am Kirschberg 5, 97218 Gerbrunn"
+  },
+  {
+    "name": "Packstation 195",
+    "lat": 49.787398,
+    "lon": 9.920118,
+    "address": "Leistenstr. 25a, 97082 Würzburg"
+  },
+  {
+    "name": "Packstation 162",
+    "lat": 49.806878,
+    "lon": 9.980159,
+    "address": "Werner-von-Siemens-Str. 62, 97076 Würzburg"
+  },
+  {
+    "name": "Packstation 112",
+    "lat": 49.792609,
+    "lon": 9.916564,
+    "address": "Wörthstr. 1a, 97082 Würzburg"
+  },
+  {
+    "name": "Packstation 197",
+    "lat": 49.792909,
+    "lon": 9.916534,
+    "address": "Höchberger Str. 10, 97082 Würzburg"
+  },
+  {
+    "name": "Packstation 119",
+    "lat": 49.787608,
+    "lon": 9.990301,
+    "address": "Oberer Kirschberg 8, 97218 Gerbrunn"
+  },
+  {
+    "name": "Packstation 179",
+    "lat": 49.793272,
+    "lon": 10.00015,
+    "address": "Louis-Pasteur-Str. 16, 97076 Würzburg"
+  },
+  {
+    "name": "Packstation 196",
+    "lat": 49.794602,
+    "lon": 9.906087,
+    "address": "Frankfurter Str. 56, 97082 Würzburg"
+  },
+  {
+    "name": "DHL Packstation 197",
+    "lat": 49.789833,
+    "lon": 9.9038381,
+    "address": "Hoechberger Str. 10, 97082 WUERZBURG"
+  },
+  {
+    "name": "Packstation 104",
+    "lat": 49.794153,
+    "lon": 9.900457,
+    "address": "Frankfurter Str. 75, 97082 Würzburg"
+  },
+  {
+    "name": "Packstation 185",
+    "lat": 49.756969,
+    "lon": 9.943914,
+    "address": "Stuttgarter Str. 24, 97084 Würzburg"
+  },
+  {
+    "name": "Packstation 144",
+    "lat": 49.756389,
+    "lon": 9.943169,
+    "address": "Stuttgarter Str. 28, 97084 Würzburg"
+  },
+  {
+    "name": "Packstation 175",
+    "lat": 49.796066,
+    "lon": 9.896493,
+    "address": "Mainaustr. 57, 97082 Würzburg"
+  },
+  {
+    "name": "Packstation 138",
+    "lat": 49.806502,
+    "lon": 9.892178,
+    "address": "Alfred-Nobel-Str. 12, 97080 Würzburg"
+  },
+  {
+    "name": "Packstation 181",
+    "lat": 49.806686,
+    "lon": 9.892255,
+    "address": "Alfred-Nobel-Str. 14, 97080 Würzburg"
+  },
+  {
+    "name": "Packstation 105",
+    "lat": 49.747962,
+    "lon": 9.957938,
+    "address": "Pariser Str. 20, 97084 Würzburg"
+  },
+  {
+    "name": "Packstation 153",
+    "lat": 49.789611,
+    "lon": 9.885061,
+    "address": "Albert-Schweitzer-Str. 51, 97204 Höchberg"
+  }
+]
