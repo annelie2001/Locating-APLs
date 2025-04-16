@@ -17,9 +17,11 @@ def _():
     from folium.plugins import Fullscreen
     import branca.colormap as cm
     import numpy as np
+    import altair as alt
     return (
         Fullscreen,
         Polygon,
+        alt,
         cm,
         folium,
         gpd,
@@ -83,7 +85,7 @@ def _(json, requests):
             json.dump(packstations, f, ensure_ascii=False, indent=2)
 
         print("Packstationen gespeichert.")
-    
+
     else:
         print(f"Fehler beim Abrufen der Packstationen: {response_dhl.status_code} - {response_dhl.text}")
     return (
@@ -216,7 +218,7 @@ def _(
             - For reference: There are {(len(packstations))} DHL parcel lockers in Würzburg
 
             **Heuristic:**
-        
+
             - Set up APLs, starting with the most densely populated 100m grid cell and ending with the least densely populated grid cell 
             - APLs must be a minimum of three empty grid cells apart.
             """
@@ -234,6 +236,58 @@ def _(
         ps,
         row,
     )
+
+
+@app.cell
+def _(alt, pd):
+    scenario_long_df = pd.read_csv("./Data/generated_scenarios.csv", sep=";")
+    scenario_long_df["Month"] = scenario_long_df.index
+    scenario_long_df = scenario_long_df.melt(id_vars="Month", var_name="Scenario", value_name="Demand")
+
+    color_scale = alt.Scale(scheme="redyellowgreen")
+    return color_scale, scenario_long_df
+
+
+@app.cell
+def _(scenario_long_df):
+    scenario_options = scenario_long_df["Scenario"].unique()
+
+    default_scenarios = ["Scenario1", "Scenario10", "Scenario20"]
+    return default_scenarios, scenario_options
+
+
+@app.cell
+def _(default_scenarios, mo, scenario_options):
+    scenario_selection = mo.ui.multiselect(
+        scenario_options, label="Select the scenarios you want to display", value=default_scenarios
+    )
+    return (scenario_selection,)
+
+
+@app.cell
+def _(alt, color_scale, scenario_long_df, scenario_selection):
+    filtered_df = scenario_long_df[scenario_long_df["Scenario"].isin(scenario_selection.value)]
+
+    interactive_chart = alt.Chart(filtered_df).mark_line().encode(
+        x=alt.X("Month:Q", title="Month"),
+        y=alt.Y("Demand:Q", title="Demand"),
+        color=alt.Color("Scenario:N", scale=color_scale, legend=alt.Legend(title="Scenario")),
+    ).properties(
+        width=700,
+        height=400,
+        title="Generated demand scenarios"
+    )
+    return filtered_df, interactive_chart
+
+
+@app.cell
+def _(interactive_chart, mo, scenario_selection):
+    mo.vstack([
+        mo.md("#Demand Scenarios"),
+        interactive_chart,
+        scenario_selection
+    ], gap=2, align="center")
+    return
 
 
 if __name__ == "__main__":
