@@ -76,7 +76,7 @@ Population growth rate=(0.008)/12
 		Simulation Control Parameters
 	|
 
-FINAL TIME  = 60
+FINAL TIME  = 120
 	~	Month
 	~	The final time for the simulation.
 	|
@@ -87,7 +87,7 @@ INITIAL TIME  = 0
 	|
 
 SAVEPER  = 
-        TIME STEP
+        TIME STEP 
 	~	Month [0,?]
 	~	The frequency with which output is stored.
 	|
@@ -100,7 +100,7 @@ TIME STEP  = 1
 \\\---/// Sketch information - do not modify anything except names
 V300  Do not put anything below this section - it will be ignored
 *View 1
-$192-192-192,0,Times New Roman|12||0-0-0|0-0-0|0-0-255|-1--1--1|-1--1--1|96,96,100,3
+$192-192-192,0,Times New Roman|12||0-0-0|0-0-0|0-0-255|-1--1--1|-1--1--1|96,96,90,3
 10,1,Market Size,396,269,46,26,8,3,0,8,0,0,0,0,-1--1--1,0-0-0,|14||0-0-0,0,0,0,0,0,0
 10,2,Population,299,198,41,11,8,131,0,8,0,0,0,0,-1--1--1,0-0-0,|14||0-0-0,0,0,0,0,0,0
 12,3,0,1221,158,150,150,3,44,0,0,2,0,0,0,0,0,0,0,0,0
@@ -109,7 +109,7 @@ Market Size,Graph
 APL users,Graph
 11,5,0,272,267,6,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
 10,6,Population growth rate,272,295,44,20,40,131,0,8,-1,0,0,0,-1--1--1,0-0-0,|14||0-0-0,0,0,0,0,0,0
-10,7,"Potential e-customers",512,351,46,20,8,131,0,8,0,0,0,0,-1--1--1,0-0-0,|14||0-0-0,0,0,0,0,0,0
+10,7,"Potential e-customers",512,351,46,26,8,131,0,8,0,0,0,0,-1--1--1,0-0-0,|14||0-0-0,0,0,0,0,0,0
 12,8,48,335,351,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
 1,9,11,7,4,0,0,22,0,0,0,-1--1--1,,1|(430,351)|
 1,10,11,8,100,0,0,22,0,0,0,-1--1--1,,1|(364,351)|
@@ -150,14 +150,14 @@ Number of APLs,Graph
 1,42,1,7,0,0,0,0,0,64,0,-1--1--1,,1|(0,0)|
 ///---\\\
 :L<%^E!@
-1:S1.vdfx
+1:S2.vdfx
 4:Time
-5:"E-shopper share"
-9:S1
-19:100,0
+5:Number of APLs
+9:S2
+19:90,0
 24:0
-25:60
-26:60
+25:120
+26:120
 23:0
 18:APL company service Completed (SFD) V4.vsc
 20:APL company service Completed (SFD) V4.lst
