@@ -8,16 +8,15 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
     import requests
-    import folium
-    import geopandas as gpd
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    from shapely.geometry import Polygon
     import json
+    import folium
     from folium.plugins import Fullscreen
-    import branca.colormap as cm
-    import numpy as np
+    import pandas as pd
+    import geopandas as gpd
     import altair as alt
+    from shapely.geometry import Polygon
+    import branca.colormap as cm
+    import pysd
     return (
         Fullscreen,
         Polygon,
@@ -27,9 +26,8 @@ def _():
         gpd,
         json,
         mo,
-        np,
         pd,
-        plt,
+        pysd,
         requests,
     )
 
@@ -127,11 +125,13 @@ def _(gpd):
                 abs(r - br) <= mindestabstand_zellen and abs(c - bc) <= mindestabstand_zellen
                 for br, bc in belegte_zellen
             )
+                
             if not too_close:
                 belegte_zellen.append((r, c))
                 ausgewaehlte.append(row)
                 if len(ausgewaehlte) >= anzahl:
                     break
+            
 
         return gpd.GeoDataFrame(ausgewaehlte, crs=gdf.crs)
     return (heuristic_APLs,)
@@ -206,21 +206,24 @@ def _(
 
     folium.LayerControl(position='bottomleft', collapsed=False).add_to(m)
 
-    # Display Map
     mo.vstack([
-        mo.md("#Population map Würzburg"),
+        mo.md(
+            r"""
+            #Würzburg Baseline: Population and APL Landscape
+
+            ##Population Map Würzburg
+            In order to plan the optimal placement of parcel lockers (APLs) in Würzburg, an understanding of the population distribution is important. The interactive map below visualizes population density at the level of 100m x 100m grid cells according to the Zensus 2022 data.
+            """),
         m,
         anzahl_slider,
         mo.md(
             f"""
-            - Move the slider to adjust the number of APLs 
-            - Select the card layers you want to display
-            - For reference: There are {(len(packstations))} DHL parcel lockers in Würzburg
+            To evaluate the effectiveness of different location strategies, two additional layers are displayed:
 
-            **Heuristic:**
+            * **DHL Packstations:** The locations of existing DHL Packstations serve as a real-world benchmark. They represent the current distribution of pick-up points in the city and enable a comparison with alternative approaches.
+            * **Heuristic APL locations:** Based on population density, a heuristic method was applied to identify potentially optimal locations for additional APLs. This method places APLs in the most densely populated areas while maintaining a minimum distance between locations.  
 
-            - Set up APLs, starting with the most densely populated 100m grid cell and ending with the least densely populated grid cell 
-            - APLs must be a minimum of three empty grid cells apart.
+            (For reference: There are {(len(packstations))} DHL parcel lockers in Würzburg)
             """
         )
     ], gap=2)
@@ -236,6 +239,76 @@ def _(
         ps,
         row,
     )
+
+
+@app.cell
+def _():
+    constant_variables = ["Population", "Population growth rate", '"E-shopper share"', ''"E-shoppers growth rate"'', "Online purchase growth rate", "APL market growth rate", '"Avg. parcels per APL per month"']
+                      
+    dynamic_variables = ["Market Size", '"Potential e-customers"', "APL users", "Purchases per month", "Number of deliveries", "Number of APLs"]
+    return constant_variables, dynamic_variables
+
+
+@app.cell
+def _(pysd):
+    sd_model = pysd.read_vensim("./Vensim-Model/APL-SFD-Würzburg-V1.mdl")
+    model_overview = sd_model.doc
+    #print(model_overview)
+    simulation_results = sd_model.run().reset_index()
+    #print(simulation_results.head())
+    return model_overview, sd_model, simulation_results
+
+
+@app.cell
+def _(dynamic_variables, simulation_results):
+    filtered_simulation_results = simulation_results[dynamic_variables]
+    return (filtered_simulation_results,)
+
+
+@app.cell
+def _(alt, simulation_results):
+    deliveries_chart = alt.Chart(simulation_results).mark_line().encode(
+        x=alt.X("time:Q"),
+        y=alt.Y("Number of deliveries:Q")
+    )
+
+    apl_users_chart = alt.Chart(simulation_results).mark_line().encode(
+        x=alt.X("time:Q"),
+        y=alt.Y("APL users")
+    )
+
+    market_size_chart = alt.Chart(simulation_results).mark_line().encode(
+        x=alt.X("time:Q"),
+        y=alt.Y("Market Size:Q")
+    )
+    return apl_users_chart, deliveries_chart, market_size_chart
+
+
+@app.cell
+def _(
+    apl_users_chart,
+    deliveries_chart,
+    filtered_simulation_results,
+    market_size_chart,
+    mo,
+):
+    mo.vstack([
+        mo.md(
+            r"""
+            #System Dynamics Model  
+            In the next step, I adapted the Stocks and Flows Diagram by Rabe et al. to Würzburg to simulate the demand over the next 10 years.
+            """),
+        mo.image(src="./Vensim-Model/APL-SFD-Würzburg-V1.png",
+                width=600, style={"margin-right": "auto", "margin-left": "auto"}),
+        mo.md("##Simulation results"),
+        mo.hstack([
+            market_size_chart,
+            apl_users_chart,
+            deliveries_chart,
+        ]),
+        mo.callout(filtered_simulation_results),
+    ], align="center")
+    return
 
 
 @app.cell
@@ -283,7 +356,13 @@ def _(alt, color_scale, scenario_long_df, scenario_selection):
 @app.cell
 def _(interactive_chart, mo, scenario_selection):
     mo.vstack([
-        mo.md("#Demand Scenarios"),
+        mo.md(
+            r"""
+            ##Demand Scenarios
+
+            After getting an idea of the demand development over the next 10 years, I created 20 demand scenarios following a normal distribution, with increasing uncertainty in future periods. The scenarios are ordered from pessimistic to optimistic. 
+            """
+        ),
         interactive_chart,
         scenario_selection
     ], gap=2, align="center")
