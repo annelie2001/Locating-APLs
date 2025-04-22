@@ -28,11 +28,11 @@ def _(df):
 
 
 @app.cell
-def _(demand_series, np, num_months, pd):
+def _(demand_series, np, pd):
     # Szenario-Anzahl und Parameter
     num_scenarios = 20
-    num_scenarios = 120
-    delta = 0.002
+    num_months = 120
+    delta = 0.003
 
     # Faktoren zur Skalierung der Nachfrage je Szenario (linear von pessimistisch bis optimistisch)
     scenario_factors = np.linspace(0.9, 1.1, num_scenarios)  # z.B. 80% bis 120% des Basiswerts
@@ -44,7 +44,7 @@ def _(demand_series, np, num_months, pd):
     for s_idx, factor in enumerate(scenario_factors):
         for t in range(1, num_months + 1):  # t = 1...120
             mu = factor * demand_series[t - 1]  # Nachfrage angepasst durch Szenariofaktor
-            sigma = (np.sqrt(3) / 3) * delta * t * mu  # Unsicherheit steigt mit der Zeit
+            sigma = delta / np.log(t + 1) * t * mu  # Unsicherheit steigt mit der Zeit
             scenarios[t - 1, s_idx] = int(np.random.normal(loc=mu, scale=sigma))
 
     # 7. DataFrame mit Szenarien (jeder Reihe = ein Szenario)
@@ -58,6 +58,7 @@ def _(demand_series, np, num_months, pd):
         delta,
         factor,
         mu,
+        num_months,
         num_scenarios,
         s_idx,
         scenario_df,
@@ -66,6 +67,29 @@ def _(demand_series, np, num_months, pd):
         sigma,
         t,
     )
+
+
+@app.cell
+def _(alt, delta, np, num_months, pd):
+    # Erstelle eine Liste von t-Werten
+    t_values = np.arange(1, num_months + 1)
+
+    # Berechne die gedämpften Delta-Werte
+    damped_delta_values = delta / np.log(t_values + 1)
+
+    # Erstelle ein DataFrame
+    data = pd.DataFrame({'t': t_values, 'damped_delta': damped_delta_values})
+
+    # Erstelle den Altair-Plot
+    chart = alt.Chart(data).mark_line().encode(
+        x=alt.X('t', title='Zeit (Monate)'),
+        y=alt.Y('damped_delta', title='Gedämpftes Delta')
+    ).properties(
+        title='Logarithmische Dämpfung von Delta'
+    )
+
+    chart
+    return chart, damped_delta_values, data, t_values
 
 
 if __name__ == "__main__":

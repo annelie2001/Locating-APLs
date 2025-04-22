@@ -17,6 +17,8 @@ def _():
     from shapely.geometry import Polygon
     import branca.colormap as cm
     import pysd
+    import numpy as np
+
     return (
         Fullscreen,
         Polygon,
@@ -26,6 +28,7 @@ def _():
         gpd,
         json,
         mo,
+        np,
         pd,
         pysd,
         requests,
@@ -125,13 +128,13 @@ def _(gpd):
                 abs(r - br) <= mindestabstand_zellen and abs(c - bc) <= mindestabstand_zellen
                 for br, bc in belegte_zellen
             )
-                
+
             if not too_close:
                 belegte_zellen.append((r, c))
                 ausgewaehlte.append(row)
                 if len(ausgewaehlte) >= anzahl:
                     break
-            
+
 
         return gpd.GeoDataFrame(ausgewaehlte, crs=gdf.crs)
     return (heuristic_APLs,)
@@ -209,10 +212,10 @@ def _(
     mo.vstack([
         mo.md(
             r"""
-            #Würzburg Baseline: Population and APL Landscape
+            #Würzburg Status Quo: Population and APL Landscape
 
             ##Population Map Würzburg
-            In order to plan the optimal placement of parcel lockers (APLs) in Würzburg, an understanding of the population distribution is important. The interactive map below visualizes population density at the level of 100m x 100m grid cells according to the Zensus 2022 data.
+            In order to plan the optimal placement of parcel lockers (APLs) in Würzburg, an understanding of the population distribution is crucial. The interactive map below visualizes population density at the level of 100m x 100m grid cells according to the Zensus 2022 data.
             """),
         m,
         anzahl_slider,
@@ -220,8 +223,8 @@ def _(
             f"""
             To evaluate the effectiveness of different location strategies, two additional layers are displayed:
 
-            * **DHL Packstations:** The locations of existing DHL Packstations serve as a real-world benchmark. They represent the current distribution of pick-up points in the city and enable a comparison with alternative approaches.
-            * **Heuristic APL locations:** Based on population density, a heuristic method was applied to identify potentially optimal locations for additional APLs. This method places APLs in the most densely populated areas while maintaining a minimum distance between locations.  
+            * **DHL Packstations:** The locations of existing DHL Packstations serve as a real-world benchmark and enable a comparison with alternative approaches.
+            * **Heuristic APL locations:** As a second benchmark, I applied a heurisitc method based on population density to identify potentially optimal APL locations. This method places APLs in the most densely populated areas while maintaining a minimum distance between locations.  
 
             (For reference: There are {(len(packstations))} DHL parcel lockers in Würzburg)
             """
@@ -244,7 +247,7 @@ def _(
 @app.cell
 def _():
     constant_variables = ["Population", "Population growth rate", '"E-shopper share"', ''"E-shoppers growth rate"'', "Online purchase growth rate", "APL market growth rate", '"Avg. parcels per APL per month"']
-                      
+
     dynamic_variables = ["Market Size", '"Potential e-customers"', "APL users", "Purchases per month", "Number of deliveries", "Number of APLs"]
     return constant_variables, dynamic_variables
 
@@ -260,27 +263,37 @@ def _(pysd):
 
 
 @app.cell
-def _(dynamic_variables, simulation_results):
-    filtered_simulation_results = simulation_results[dynamic_variables]
-    return (filtered_simulation_results,)
+def _(dynamic_variables, np, simulation_results):
+    filtered_simulation_results = simulation_results[dynamic_variables].copy()
+
+    for col in dynamic_variables:
+        filtered_simulation_results[col] = filtered_simulation_results[col].apply(np.floor)
+
+    return col, filtered_simulation_results
 
 
 @app.cell
-def _(alt, simulation_results):
+def _(alt, mo, simulation_results):
     deliveries_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("Number of deliveries:Q")
     )
+
+    deliveries_chart = mo.ui.altair_chart(deliveries_chart, chart_selection="point")
 
     apl_users_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("APL users")
     )
 
+    apl_users_chart = mo.ui.altair_chart(apl_users_chart, chart_selection="point")
+
     market_size_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("Market Size:Q")
     )
+
+    market_size_chart = mo.ui.altair_chart(market_size_chart, chart_selection="point")
     return apl_users_chart, deliveries_chart, market_size_chart
 
 
@@ -296,7 +309,7 @@ def _(
         mo.md(
             r"""
             #System Dynamics Model  
-            In the next step, I adapted the Stocks and Flows Diagram by Rabe et al. to Würzburg to simulate the demand over the next 10 years.
+            In the next step, I adapted the Stocks and Flows Diagram by Rabe et al. to Würzburg to simulate the demand for APLs over the next 10 years.
             """),
         mo.image(src="./Vensim-Model/APL-SFD-Würzburg-V1.png",
                 width=600, style={"margin-right": "auto", "margin-left": "auto"}),
@@ -360,7 +373,22 @@ def _(interactive_chart, mo, scenario_selection):
             r"""
             ##Demand Scenarios
 
-            After getting an idea of the demand development over the next 10 years, I created 20 demand scenarios following a normal distribution, with increasing uncertainty in future periods. The scenarios are ordered from pessimistic to optimistic. 
+            After getting an idea of the demand development over the next 10 years, I created 20 demand scenarios following a normal distribution, with increasing uncertainty in future periods. Demand refers to the number of deliveries to APLs per month. The scenarios are ordered from pessimistic to optimistic. 
+            The scenario and period dependent demand is modeled according to the following equation:
+
+            $$
+            D_{ts} = \frac{\delta}{\log(t + 1)} \cdot t \cdot \mu_{ts}
+            $$
+
+            with $\delta = 0.003$  
+            and
+        
+            $$
+            \mu_{ts} = D_t \cdot f_s
+            $$ 
+
+            with $D_t$ being the demand in month t according to the simulation and $f_s$ being a scenario dependent factor between 0.9 and 1.1
+        
             """
         ),
         interactive_chart,
