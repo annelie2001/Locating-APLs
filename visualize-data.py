@@ -18,7 +18,6 @@ def _():
     import branca.colormap as cm
     import pysd
     import numpy as np
-
     return (
         Fullscreen,
         Polygon,
@@ -37,8 +36,18 @@ def _():
 
 @app.cell
 def _(gpd):
-    wuerzburg_poly_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
-    return (wuerzburg_poly_gdf,)
+    wuerzburg_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
+    wuerzburg_gdf_200m = gpd.read_file("./Data/wuerzburg_bevoelkerung_200m.geojson")
+    return wuerzburg_gdf, wuerzburg_gdf_200m
+
+
+@app.cell
+def _(wuerzburg_gdf, wuerzburg_gdf_200m):
+    print(wuerzburg_gdf.shape)
+    print(wuerzburg_gdf.head())
+    print(wuerzburg_gdf_200m.shape)
+    print(wuerzburg_gdf_200m.head())
+    return
 
 
 @app.cell
@@ -155,22 +164,23 @@ def _(
     heuristic_APLs,
     mo,
     packstations,
-    wuerzburg_poly_gdf,
+    wuerzburg_gdf,
 ):
     # Heuristik-Anwendung
     anzahl = anzahl_slider.value  # Vom Slider holen
-    gewaehlte_packzellen = heuristic_APLs(wuerzburg_poly_gdf, anzahl=anzahl)
+    gewaehlte_packzellen = heuristic_APLs(wuerzburg_gdf, anzahl=anzahl)
 
     m = folium.Map(location=[49.7925, 9.9380], zoom_start=13, tiles='cartodbpositron')
     Fullscreen().add_to(m)
 
     # Population-GeoJSON
     colormap = cm.linear.YlOrRd_09.scale(0, 200)
-    colormap.caption = 'Population per 100m-grid-cell'
+    colormap.caption = 'Population per grid-cell'
 
+    layer_100m = folium.FeatureGroup(name='Population 100m-Grid', overlay=True, control=True)
     folium.GeoJson(
         './Data/wuerzburg_bevoelkerung_100m.geojson',
-        name='Population',
+        name='Population 100m-grid',
         style_function=lambda feature: {
             'fillColor': colormap(feature['properties']['Einwohner']),
             'color': 'black',
@@ -178,7 +188,22 @@ def _(
             'fillOpacity': 0.7,
         },
         tooltip=folium.GeoJsonTooltip(fields=['Einwohner'], aliases=['Einwohner:']),
-    ).add_to(m)
+    ).add_to(layer_100m)
+    layer_100m.add_to(m)
+
+    layer_200m = folium.FeatureGroup(name='Population 200m-Grid', overlay=True, control=True, show=False)
+    folium.GeoJson(
+        './Data/wuerzburg_bevoelkerung_200m.geojson',
+        name='Population 200m-Grid',
+        style_function=lambda feature: {
+            'fillColor': colormap(feature['properties']['Einwohner']),
+            'color': 'black',
+            'weight': 0.3,
+            'fillOpacity': 0.7,
+        },
+        tooltip=folium.GeoJsonTooltip(fields=['Einwohner'], aliases=['Einwohner:']),
+    ).add_to(layer_200m)
+    layer_200m.add_to(m)
 
     colormap.add_to(m)
 
@@ -238,6 +263,8 @@ def _(
         gewaehlte_packzellen,
         heuristic_layer,
         i,
+        layer_100m,
+        layer_200m,
         m,
         ps,
         row,
@@ -268,7 +295,6 @@ def _(dynamic_variables, np, simulation_results):
 
     for col in dynamic_variables:
         filtered_simulation_results[col] = filtered_simulation_results[col].apply(np.floor)
-
     return col, filtered_simulation_results
 
 
@@ -382,13 +408,13 @@ def _(interactive_chart, mo, scenario_selection):
 
             with $\delta = 0.003$  
             and
-        
+
             $$
             \mu_{ts} = D_t \cdot f_s
             $$ 
 
             with $D_t$ being the demand in month t according to the simulation and $f_s$ being a scenario dependent factor between 0.9 and 1.1
-        
+
             """
         ),
         interactive_chart,
