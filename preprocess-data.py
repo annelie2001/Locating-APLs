@@ -1,6 +1,8 @@
+
+
 import marimo
 
-__generated_with = "0.11.22"
+__generated_with = "0.13.2"
 app = marimo.App(width="medium")
 
 
@@ -9,7 +11,8 @@ def _():
     import pandas as pd
     import geopandas as gpd
     from shapely.geometry import Polygon, box, Point
-    return Point, Polygon, box, gpd, pd
+    from sklearn.cluster import KMeans
+    return KMeans, Point, Polygon, gpd, pd
 
 
 @app.cell
@@ -17,7 +20,7 @@ def _(Point, gpd):
     wuerzburg_center_wgs84 = gpd.GeoSeries([Point(9.9534, 49.7913)], crs='EPSG:4326')
     wuerzburg_center_3035 = wuerzburg_center_wgs84.to_crs('EPSG:3035')
     print(wuerzburg_center_3035)
-    return wuerzburg_center_3035, wuerzburg_center_wgs84
+    return
 
 
 @app.cell
@@ -75,19 +78,7 @@ def _(Point, Polygon, gpd, pd):
     wuerzburg_poly_gdf.to_file('./Data/wuerzburg_bevoelkerung_100m.geojson', driver='GeoJSON')
 
     print("Daten erfolgreich vorverarbeitet und als GeoJSON gespeichert.")
-    return (
-        buffer,
-        create_polygon,
-        df,
-        gdf_points,
-        geometry,
-        polygons,
-        wuerzburg_bbox,
-        wuerzburg_center,
-        wuerzburg_data,
-        wuerzburg_gdf,
-        wuerzburg_poly_gdf,
-    )
+    return wuerzburg_data, wuerzburg_poly_gdf
 
 
 @app.cell
@@ -105,13 +96,12 @@ def _(Polygon, gpd, wuerzburg_data):
         return list(group['Gitter_ID_100m'])
 
     # Gruppieren und aggregieren
-    grouped = wuerzburg_data.groupby(['x_200m', 'y_200m']).agg({
+    grouped_200m = wuerzburg_data.groupby(['x_200m', 'y_200m']).agg({
         'Einwohner': 'sum'
     }).reset_index()
 
     # Zusätzliche Infos hinzufügen
-    grouped['Gitter_ID_100m'] = wuerzburg_data.groupby(['x_200m', 'y_200m']).apply(get_top_left_id).values
-    #grouped['Gitter_IDs_alle_4'] = wuerzburg_data.groupby(['x_200m', 'y_200m']).apply(get_all_ids).values
+    grouped_200m['Gitter_ID_100m'] = wuerzburg_data.groupby(['x_200m', 'y_200m']).apply(get_top_left_id).values
 
     # Geometrie für 200m-Zellen erstellen
     def create_200m_polygon(row):
@@ -124,16 +114,76 @@ def _(Polygon, gpd, wuerzburg_data):
             (x, y + 200)
         ])
 
-    grouped['geometry'] = grouped.apply(create_200m_polygon, axis=1)
+    grouped_200m['geometry'] = grouped_200m.apply(create_200m_polygon, axis=1)
 
     # GeoDataFrame bauen
-    gdf_200m = gpd.GeoDataFrame(grouped, geometry='geometry', crs='EPSG:3035')
+    gdf_200m = gpd.GeoDataFrame(grouped_200m, geometry='geometry', crs='EPSG:3035')
     gdf_200m = gdf_200m.to_crs('EPSG:4326')
 
     # Speichern
     gdf_200m.to_file('./Data/wuerzburg_bevoelkerung_200m.geojson', driver='GeoJSON')
     print("Daten erfolgreich vorverarbeitet und als GeoJSON gespeichert.")
-    return create_200m_polygon, gdf_200m, get_all_ids, get_top_left_id, grouped
+    return (get_top_left_id,)
+
+
+@app.cell
+def _(Polygon, get_top_left_id, gpd, wuerzburg_data):
+    # 300m-Koordinaten bestimmen
+    wuerzburg_data['x_300m'] = (wuerzburg_data['x_mp_100m'] // 300) * 300
+    wuerzburg_data['y_300m'] = (wuerzburg_data['y_mp_100m'] // 300) * 300
+
+    # Gruppieren und aggregieren
+    grouped_300m = wuerzburg_data.groupby(['x_300m', 'y_300m']).agg({
+        'Einwohner': 'sum'
+    }).reset_index()
+
+    # Zusätzliche Infos hinzufügen
+    grouped_300m['Gitter_ID_100m'] = wuerzburg_data.groupby(['x_300m', 'y_300m']).apply(get_top_left_id).values
+
+    # Geometrie für 300m-Zellen erstellen
+    def create_300m_polygon(row):
+        x = row['x_300m']
+        y = row['y_300m']
+        return Polygon([
+            (x, y),
+            (x + 300, y),
+            (x + 300, y + 300),
+            (x, y + 300)
+        ])
+
+    grouped_300m['geometry'] = grouped_300m.apply(create_300m_polygon, axis=1)
+
+    # GeoDataFrame bauen
+    gdf_300m = gpd.GeoDataFrame(grouped_300m, geometry='geometry', crs='EPSG:3035')
+    gdf_300m = gdf_300m.to_crs('EPSG:4326')
+
+    # Speichern
+    gdf_300m.to_file('./Data/wuerzburg_bevoelkerung_300m.geojson', driver='GeoJSON')
+    print("Daten erfolgreich vorverarbeitet und als GeoJSON gespeichert.")
+    return
+
+
+@app.cell
+def _(wuerzburg_poly_gdf):
+    wuerzburg_poly_gdf.head()
+    return
+
+
+@app.cell
+def _(KMeans, gdf, wuerzburg_poly_gdf):
+    # Extrahiere relevante Infos
+    X = wuerzburg_poly_gdf[["geometry"]].values
+
+    # KMeans Clustering
+    kmeans = KMeans(n_clusters=50, random_state=0)
+    gdf["cluster"] = kmeans.fit_predict(X)
+
+    # Cluster-Zentren abrufen
+    cluster_centers = kmeans.cluster_centers_
+    print(cluster_centers)
+    # cluster_gdf = gpd.GeoDataFrame(geometry=[shapely.geometry.Point(xy) for xy in cluster_centers], crs="EPSG:4326")
+    # cluster_gdf.to_file("./Data/potentielle_apl.geojson", driver="GeoJSON")
+    return
 
 
 if __name__ == "__main__":

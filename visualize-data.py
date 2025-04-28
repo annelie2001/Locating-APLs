@@ -1,6 +1,8 @@
+
+
 import marimo
 
-__generated_with = "0.11.22"
+__generated_with = "0.13.2"
 app = marimo.App(width="medium")
 
 
@@ -18,35 +20,22 @@ def _():
     import branca.colormap as cm
     import pysd
     import numpy as np
-    return (
-        Fullscreen,
-        Polygon,
-        alt,
-        cm,
-        folium,
-        gpd,
-        json,
-        mo,
-        np,
-        pd,
-        pysd,
-        requests,
-    )
+    return alt, cm, folium, gpd, json, mo, np, pd, pysd, requests
 
 
 @app.cell
 def _(gpd):
     wuerzburg_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
     wuerzburg_gdf_200m = gpd.read_file("./Data/wuerzburg_bevoelkerung_200m.geojson")
-    return wuerzburg_gdf, wuerzburg_gdf_200m
+    wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
+    return wuerzburg_gdf, wuerzburg_gdf_200m, wuerzburg_gdf_300m
 
 
 @app.cell
-def _(wuerzburg_gdf, wuerzburg_gdf_200m):
+def _(wuerzburg_gdf, wuerzburg_gdf_200m, wuerzburg_gdf_300m):
     print(wuerzburg_gdf.shape)
-    print(wuerzburg_gdf.head())
     print(wuerzburg_gdf_200m.shape)
-    print(wuerzburg_gdf_200m.head())
+    print(wuerzburg_gdf_300m.shape)
     return
 
 
@@ -98,23 +87,7 @@ def _(json, requests):
 
     else:
         print(f"Fehler beim Abrufen der Packstationen: {response_dhl.status_code} - {response_dhl.text}")
-    return (
-        address,
-        data_dhl,
-        dhl_api_key,
-        f,
-        geo,
-        headers,
-        lat,
-        latitude,
-        location,
-        lon,
-        longitude,
-        packstations,
-        params_dhl,
-        response_dhl,
-        url,
-    )
+    return (packstations,)
 
 
 @app.cell
@@ -157,7 +130,6 @@ def _(mo):
 
 @app.cell
 def _(
-    Fullscreen,
     anzahl_slider,
     cm,
     folium,
@@ -171,7 +143,7 @@ def _(
     gewaehlte_packzellen = heuristic_APLs(wuerzburg_gdf, anzahl=anzahl)
 
     m = folium.Map(location=[49.7925, 9.9380], zoom_start=13, tiles='cartodbpositron')
-    Fullscreen().add_to(m)
+    #Fullscreen().add_to(m)
 
     # Population-GeoJSON
     colormap = cm.linear.YlOrRd_09.scale(0, 200)
@@ -255,20 +227,7 @@ def _(
             """
         )
     ], gap=2)
-    return (
-        anzahl,
-        centroid,
-        colormap,
-        dhl_layer,
-        gewaehlte_packzellen,
-        heuristic_layer,
-        i,
-        layer_100m,
-        layer_200m,
-        m,
-        ps,
-        row,
-    )
+    return
 
 
 @app.cell
@@ -276,7 +235,7 @@ def _():
     constant_variables = ["Population", "Population growth rate", '"E-shopper share"', ''"E-shoppers growth rate"'', "Online purchase growth rate", "APL market growth rate", '"Avg. parcels per APL per month"']
 
     dynamic_variables = ["Market Size", '"Potential e-customers"', "APL users", "Purchases per month", "Number of deliveries", "Number of APLs"]
-    return constant_variables, dynamic_variables
+    return (dynamic_variables,)
 
 
 @app.cell
@@ -286,7 +245,7 @@ def _(pysd):
     #print(model_overview)
     simulation_results = sd_model.run().reset_index()
     #print(simulation_results.head())
-    return model_overview, sd_model, simulation_results
+    return (simulation_results,)
 
 
 @app.cell
@@ -295,7 +254,7 @@ def _(dynamic_variables, np, simulation_results):
 
     for col in dynamic_variables:
         filtered_simulation_results[col] = filtered_simulation_results[col].apply(np.floor)
-    return col, filtered_simulation_results
+    return (filtered_simulation_results,)
 
 
 @app.cell
@@ -389,7 +348,7 @@ def _(alt, color_scale, scenario_long_df, scenario_selection):
         height=400,
         title="Generated demand scenarios"
     )
-    return filtered_df, interactive_chart
+    return (interactive_chart,)
 
 
 @app.cell

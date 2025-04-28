@@ -23,6 +23,8 @@ def _(gpd, pd):
     # Load data
 
     scenarios_df = pd.read_csv("./Data/generated_scenarios.csv", sep=";")
+    scenratios_df_filteres = scenarios_df.iloc[[1, 13, 25, 37]] #Erster Monat mit einem Jahr Abstand
+    time_periods = [1, 2] 
 
     wuerzburg_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
     wuerzburg_gdf_projected = wuerzburg_gdf.to_crs(epsg=25832)
@@ -32,43 +34,46 @@ def _(gpd, pd):
     wuerzburg_gdf_projected_200m = wuerzburg_gdf_200m.to_crs(epsg=25832)
     grid_cells_200m = wuerzburg_gdf_200m.loc[:, 'Gitter_ID_100m']
 
+    wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
+    wuerzburg_gdf_projected_300m = wuerzburg_gdf_300m.to_crs(epsg=25832)
+    grid_cells_300m = wuerzburg_gdf_300m.loc[:, 'Gitter_ID_100m']
+
     total_population = wuerzburg_gdf["Einwohner"].sum()
-    time_periods = [1, 2]
-    #time_periods = list(range(1, 37)) # 3 years
 
     # Global parameters
 
     max_service_distance = 2000  # Max distance in meters
-    max_neighbors = 10  # Max distance in terms of grid cells
+    max_neighbors = 8  # Max distance in terms of grid cells
     return (
         grid_cells,
-        grid_cells_200m,
+        grid_cells_300m,
         max_neighbors,
         max_service_distance,
-        scenarios_df,
         time_periods,
         total_population,
         wuerzburg_gdf,
         wuerzburg_gdf_200m,
+        wuerzburg_gdf_300m,
         wuerzburg_gdf_projected,
-        wuerzburg_gdf_projected_200m,
+        wuerzburg_gdf_projected_300m,
     )
 
 
 @app.cell
-def _(wuerzburg_gdf, wuerzburg_gdf_200m):
+def _(wuerzburg_gdf, wuerzburg_gdf_200m, wuerzburg_gdf_300m):
     print(wuerzburg_gdf.shape)
     print(wuerzburg_gdf_200m.shape)
+    print(wuerzburg_gdf_300m.shape)
     return
 
 
 @app.cell
 def _(
     index,
-    scenarios_df,
+    scenarios_df_filtered,
     time_periods,
     total_population,
-    wuerzburg_gdf_projected_200m,
+    wuerzburg_gdf_projected_300m,
 ):
     # Build the spacial index
     def build_spatial_index(gdf):
@@ -79,7 +84,7 @@ def _(
             idx.insert(i, bounds)
         return idx, {i: row['Gitter_ID_100m'] for i, row in gdf.iterrows()}
 
-    spatial_idx, idx_to_id = build_spatial_index(wuerzburg_gdf_projected_200m)
+    spatial_idx, idx_to_id = build_spatial_index(wuerzburg_gdf_projected_300m)
 
     # Determine the nearest neighbors of each cell
     def get_nearest_neighbors(gdf, spatial_idx, idx_to_id, cell_idx, max_distance=1500, k=20):
@@ -135,7 +140,7 @@ def _(
             for _, row in gdf.iterrows():
                 j = row['Gitter_ID_100m']
                 cell_population = row["Einwohner"]
-                demand[j, t] = (cell_population / total_population) * scenarios_df.iloc[t-1, scenario]
+                demand[j, t] = (cell_population / total_population) * scenarios_df_filtered.iloc[t-1, scenario]
         return demand
     return (
         calculate_demand_per_cell,
@@ -158,13 +163,13 @@ def _(
     max_service_distance,
     spatial_idx,
     statistics,
-    wuerzburg_gdf_200m,
-    wuerzburg_gdf_projected_200m,
+    wuerzburg_gdf_300m,
+    wuerzburg_gdf_projected_300m,
 ):
-    demand_scenario_10 = calculate_demand_per_cell(wuerzburg_gdf_200m, 10)
+    demand_scenario_10 = calculate_demand_per_cell(wuerzburg_gdf_300m, 10)
     print("Calculated demand per cell done")
 
-    valid_connections = get_valid_connections(wuerzburg_gdf_projected_200m, spatial_idx, idx_to_id, max_service_distance, max_neighbors)
+    valid_connections = get_valid_connections(wuerzburg_gdf_projected_300m, spatial_idx, idx_to_id, max_service_distance, max_neighbors)
     print("Get valid connections done")
     neighbor_counts = [len(neighbors) for neighbors in valid_connections.values()]
     print(f"Durchschnittliche Anzahl Nachbarn pro Zelle: {statistics.mean(neighbor_counts)}")
@@ -174,7 +179,7 @@ def _(
     print("Valid pairs done")
     print(f"Anzahl der valid_pairs: {len(valid_pairs)}")
 
-    distribution_cost = calculate_distribution_cost(wuerzburg_gdf_projected_200m, valid_pairs)
+    distribution_cost = calculate_distribution_cost(wuerzburg_gdf_projected_300m, valid_pairs)
     print("Calculate distribution cost done")
     return demand_scenario_10, distribution_cost, valid_pairs
 
@@ -183,7 +188,7 @@ def _(
 def _(
     demand_scenario_10,
     distribution_cost,
-    grid_cells_200m,
+    grid_cells_300m,
     pyo,
     time_periods,
     valid_pairs,
@@ -193,16 +198,16 @@ def _(
     model.ValidConnections = pyo.Set(initialize=valid_pairs)
 
     # Sets
-    model.I = pyo.Set(initialize=grid_cells_200m)   # APL-Standorte (IDs oder Indizes)
-    model.J = pyo.Set(initialize=grid_cells_200m)  # Kundenstandorte
-    model.T = pyo.Set(initialize=time_periods)  # z. B. 10 Jahre à 12 Monate
+    model.I = pyo.Set(initialize=grid_cells_300m)   # APL-Standorte (IDs oder Indizes)
+    model.J = pyo.Set(initialize=grid_cells_300m)  # Kundenstandorte
+    model.T = pyo.Set(initialize=time_periods)  # Zeithorizont
 
     # Parameter
     model.c = pyo.Param(model.I, model.J, initialize=distribution_cost, within=pyo.NonNegativeReals)
     model.f = pyo.Param(model.I, model.T, initialize=lambda m, i, t: 5500 if t == 1 else 0) # Inflation noch einberechnen
     model.d = pyo.Param(model.J, model.T, initialize=demand_scenario_10, within=pyo.NonNegativeReals) # Nur Szenario 10
     model.a = pyo.Param(model.I, initialize=lambda model, i: 6000)  # 6000 Pakete/Monat
-    model.m = pyo.Param(initialize=0.4)
+    model.m = pyo.Param(initialize=0.0)
 
     # Decision Variables
     model.x = pyo.Var(model.ValidConnections, model.T, domain=pyo.Binary)
@@ -267,16 +272,23 @@ def _(model, pyo):
 
 
 @app.cell
-def _(model, pyo):
+def _(pyo, results):
     #solver = pyo.SolverFactory('glpk')
     solver = pyo.SolverFactory('cplex')
-
-    results = solver.solve(model, tee=True)
+    solver.options.update({
+        'mip.tolerances.mipgap': 0.05,
+        'mip.emphasis': 1,
+        'mip.strategy.fpheur': 1,
+        'mip.strategy.heuristicfreq': 5,
+        'timelimit': 600,
+        'preprocessing.presolve': 2,
+    })
+    #results = solver.solve(model, tee=True)
     if results.solver.termination_condition == pyo.TerminationCondition.optimal:
         print("Optimal solution found.")
     else:
         print("Solver did not find an optimal solution. Termination condition:", results.solver.termination_condition)
-    return (results,)
+    return
 
 
 @app.cell
