@@ -9,13 +9,12 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import pyomo.environ as pyo
+    from pyomo.environ import value
     import pandas as pd
     import geopandas as gpd
-    import numpy as np
-    from math import ceil
     from rtree import index
-    import statistics
-    return gpd, index, pd, pyo, statistics
+    from shapely.geometry import Point
+    return gpd, index, pd, pyo, value
 
 
 @app.cell
@@ -23,7 +22,7 @@ def _(gpd, pd):
     # Load data
 
     scenarios_df = pd.read_csv("./Data/generated_scenarios.csv", sep=";")
-    scenratios_df_filteres = scenarios_df.iloc[[1, 13, 25, 37]] #Erster Monat mit einem Jahr Abstand
+    scenarios_df_filtered = scenarios_df.iloc[[1, 13, 25, 37, 49]] #Erster Monat mit einem Jahr Abstand
     time_periods = [1, 2] 
 
     wuerzburg_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
@@ -40,31 +39,25 @@ def _(gpd, pd):
 
     total_population = wuerzburg_gdf["Einwohner"].sum()
 
+    apl_clusters_gdf = gpd.read_file("./Data/apl_candidates_clusters.geojson")
+    apl_clusters_gdf_projected = apl_clusters_gdf.to_crs(epsg=25832)
+    apl_cells = apl_clusters_gdf_projected.loc[:, 'Gitter_ID_100m']
+
     # Global parameters
 
     max_service_distance = 2000  # Max distance in meters
-    max_neighbors = 8  # Max distance in terms of grid cells
+    max_neighbors = 10  # Max distance in terms of grid cells
     return (
-        grid_cells,
+        apl_cells,
+        apl_clusters_gdf_projected,
         grid_cells_300m,
-        max_neighbors,
         max_service_distance,
+        scenarios_df_filtered,
         time_periods,
         total_population,
-        wuerzburg_gdf,
-        wuerzburg_gdf_200m,
-        wuerzburg_gdf_300m,
         wuerzburg_gdf_projected,
         wuerzburg_gdf_projected_300m,
     )
-
-
-@app.cell
-def _(wuerzburg_gdf, wuerzburg_gdf_200m, wuerzburg_gdf_300m):
-    print(wuerzburg_gdf.shape)
-    print(wuerzburg_gdf_200m.shape)
-    print(wuerzburg_gdf_300m.shape)
-    return
 
 
 @app.cell
@@ -87,7 +80,7 @@ def _(
     spatial_idx, idx_to_id = build_spatial_index(wuerzburg_gdf_projected_300m)
 
     # Determine the nearest neighbors of each cell
-    def get_nearest_neighbors(gdf, spatial_idx, idx_to_id, cell_idx, max_distance=1500, k=20):
+    def get_nearest_neighbors(gdf, spatial_idx, idx_to_id, cell_idx, max_distance=2000, k=20):
         """Finde nahe Nachbarn für eine Zelle innerhalb max_distance"""
         cell_geom = gdf.loc[cell_idx, 'geometry']
         bounds = cell_geom.bounds
@@ -121,9 +114,15 @@ def _(
 
     # Calculate distance between cells
     def get_distance(gdf, id1, id2):
-        """Berechnet die Distanz zwischen zwei Zellen anhand der Centroids"""
-        point1 = gdf.loc[gdf['Gitter_ID_100m'] == id1, 'geometry'].centroid.iloc[0]
-        point2 = gdf.loc[gdf['Gitter_ID_100m'] == id2, 'geometry'].centroid.iloc[0]
+        row1 = gdf.loc[gdf['Gitter_ID_100m'] == id1]
+        row2 = gdf.loc[gdf['Gitter_ID_100m'] == id2]
+
+        if row1.empty or row2.empty:
+            raise ValueError(f"IDs not found in GeoDataFrame: {id1}, {id2}")
+
+        point1 = row1.iloc[0].geometry.centroid
+        point2 = row2.iloc[0].geometry.centroid
+        
         return point1.distance(point2)
 
     def calculate_distribution_cost(gdf_projected, valid_pairs):
@@ -142,50 +141,49 @@ def _(
                 cell_population = row["Einwohner"]
                 demand[j, t] = (cell_population / total_population) * scenarios_df_filtered.iloc[t-1, scenario]
         return demand
-    return (
-        calculate_demand_per_cell,
-        calculate_distribution_cost,
-        get_distance,
-        get_valid_connections,
-        idx_to_id,
-        spatial_idx,
-    )
+    return calculate_demand_per_cell, calculate_distribution_cost
 
 
 @app.cell
 def _(
+    apl_clusters_gdf_projected,
     calculate_demand_per_cell,
     calculate_distribution_cost,
-    get_valid_connections,
-    grid_cells,
-    idx_to_id,
-    max_neighbors,
     max_service_distance,
-    spatial_idx,
-    statistics,
-    wuerzburg_gdf_300m,
+    wuerzburg_gdf_projected,
     wuerzburg_gdf_projected_300m,
 ):
-    demand_scenario_10 = calculate_demand_per_cell(wuerzburg_gdf_300m, 10)
-    print("Calculated demand per cell done")
+    demand_scenario_10 = calculate_demand_per_cell(wuerzburg_gdf_projected_300m, 10)
 
-    valid_connections = get_valid_connections(wuerzburg_gdf_projected_300m, spatial_idx, idx_to_id, max_service_distance, max_neighbors)
-    print("Get valid connections done")
-    neighbor_counts = [len(neighbors) for neighbors in valid_connections.values()]
-    print(f"Durchschnittliche Anzahl Nachbarn pro Zelle: {statistics.mean(neighbor_counts)}")
-    print(f"Maximale Anzahl Nachbarn pro Zelle: {max(neighbor_counts)}")
+    #valid_connections = get_valid_connections(wuerzburg_gdf_projected_300m, spatial_idx, idx_to_id, max_service_distance, max_neighbors)
+    #valid_pairs = [(i, j) for j in grid_cells for i in valid_connections.get(j, [])]
 
-    valid_pairs = [(i, j) for j in grid_cells for i in valid_connections.get(j, [])]
-    print("Valid pairs done")
-    print(f"Anzahl der valid_pairs: {len(valid_pairs)}")
+    valid_pairs = []
 
-    distribution_cost = calculate_distribution_cost(wuerzburg_gdf_projected_300m, valid_pairs)
-    print("Calculate distribution cost done")
+    for _, customer_row in wuerzburg_gdf_projected_300m.iterrows():
+        customer_id = customer_row["Gitter_ID_100m"]
+        customer_polygon = customer_row["geometry"]
+        customer_centroid = customer_polygon.centroid
+
+        for _, apl_row in apl_clusters_gdf_projected.iterrows():
+            apl_id = apl_row["Gitter_ID_100m"]
+            apl_polygon = apl_row["geometry"]
+            apl_centroid = apl_polygon.centroid
+
+            distance = customer_centroid.distance(apl_centroid)
+
+            if distance <= max_service_distance:
+                valid_pairs.append((apl_id, customer_id))
+
+    print(f"Number of valid pairs: {len(valid_pairs)}")
+
+    distribution_cost = calculate_distribution_cost(wuerzburg_gdf_projected, valid_pairs)
     return demand_scenario_10, distribution_cost, valid_pairs
 
 
 @app.cell
 def _(
+    apl_cells,
     demand_scenario_10,
     distribution_cost,
     grid_cells_300m,
@@ -198,7 +196,7 @@ def _(
     model.ValidConnections = pyo.Set(initialize=valid_pairs)
 
     # Sets
-    model.I = pyo.Set(initialize=grid_cells_300m)   # APL-Standorte (IDs oder Indizes)
+    model.I = pyo.Set(initialize=apl_cells)   # APL-Standorte (IDs oder Indizes)
     model.J = pyo.Set(initialize=grid_cells_300m)  # Kundenstandorte
     model.T = pyo.Set(initialize=time_periods)  # Zeithorizont
 
@@ -272,115 +270,65 @@ def _(model, pyo):
 
 
 @app.cell
-def _(pyo, results):
+def _(model):
+    print(list(model.component_map()))
+
+    return
+
+
+@app.cell
+def _(model, pyo):
     #solver = pyo.SolverFactory('glpk')
     solver = pyo.SolverFactory('cplex')
-    solver.options.update({
-        'mip.tolerances.mipgap': 0.05,
-        'mip.emphasis': 1,
-        'mip.strategy.fpheur': 1,
-        'mip.strategy.heuristicfreq': 5,
-        'timelimit': 600,
-        'preprocessing.presolve': 2,
-    })
-    #results = solver.solve(model, tee=True)
+
+    results = solver.solve(model, tee=True)
+    results.write()
+
     if results.solver.termination_condition == pyo.TerminationCondition.optimal:
         print("Optimal solution found.")
+        #model.pprint()
     else:
         print("Solver did not find an optimal solution. Termination condition:", results.solver.termination_condition)
     return
 
 
 @app.cell
-def _(
-    get_distance,
-    model,
-    pd,
-    pyo,
-    results,
-    wuerzburg_gdf,
-    wuerzburg_gdf_projected,
-):
-    # Result analysis
+def _(model, pd, value):
+    # 1. Extrahiere x-Variablen (Zuweisungen)
+    x_data = []
+    for (i, j, t) in model.x:
+        x_val = value(model.x[i, j, t])
+        if x_val > 1e-6:  # Nur wenn APL i dem Kunden j in Periode t zugewiesen ist
+            x_data.append({"APL_ID": i, "Customer_ID": j, "Period": t, "x": x_val})
+    df_x = pd.DataFrame(x_data)
 
-    if results.solver.status == pyo.SolverStatus.ok:
-        # Erstelle DataFrames für die Ergebnisse
-        # APL-Standorte
-        apl_results = []
-        for t in model.T:
-            for i in model.I:
-                if model.y[i, t].value > 0.5:  # APL ist aktiv
-                    valid_customers = [j for j in model.J if (i, j) in model.ValidConnections]
-                    total_demand = sum(model.d[j, t].value for j in valid_customers if model.x[i, j, t].value > 0.5)
-                    utilization = total_demand / model.a[i].value
-                    apl_results.append({
-                        'time_period': t,
-                        'apl_id': i,
-                        'active': 1,
-                        'utilization': utilization,
-                        'demand_served': total_demand
-                    })
-                else:
-                    apl_results.append({
-                        'time_period': t,
-                        'apl_id': i,
-                        'active': 0,
-                        'utilization': 0,
-                        'demand_served': 0
-                    })
+    # 2. Extrahiere y-Variablen (APL geöffnet)
+    y_data = []
+    for (i, t) in model.y:
+        y_val = value(model.y[i, t])
+        # Setup-Kosten nur, wenn APL i in t neu geöffnet wird
+        y_prev = value(model.y[i, t - 1]) if t > 1 else 0
+        was_opened = y_val - y_prev
+        setup_cost = value(model.f[i, t]) * was_opened if was_opened > 0.5 else 0
+        y_data.append({"APL_ID": i, "Period": t, "y": y_val, "SetupCost": setup_cost})
+    df_y = pd.DataFrame(y_data)
 
-        # Zuweisungen
-        assignment_results = []
-        for t in model.T:
-            for (i, j) in model.ValidConnections:
-                if model.x[i, j, t].value > 0.5:  # Zuweisung aktiv
-                    assignment_results.append({
-                        'time_period': t,
-                        'apl_id': i,
-                        'customer_id': j,
-                        'demand': model.d[j, t].value,
-                        'distance': get_distance(wuerzburg_gdf_projected, i, j)
-                    })
+    # 3. Merge x und y
+    df_combined = df_x.merge(df_y, on=["APL_ID", "Period"], how="left")
 
-        # Erstelle DataFrames
-        apl_df = pd.DataFrame(apl_results)
-        assignment_df = pd.DataFrame(assignment_results)
+    # 4. Zusätzliche Spalten: Demand, Kosten
+    df_combined["Demand"] = df_combined.apply(lambda row: value(model.d[row["Customer_ID"], row["Period"]]), axis=1)
+    df_combined["Cost_per_unit"] = df_combined.apply(lambda row: value(model.c[row["APL_ID"], row["Customer_ID"]]), axis=1)
+    df_combined["Total_Cost"] = df_combined["x"] * df_combined["Cost_per_unit"]
 
-        # Speichere als CSV
-        apl_df.to_csv('apl_locations_results.csv', index=False)
-        assignment_df.to_csv('customer_assignments_results.csv', index=False)
+    # 5. Sortieren nach Zeit, dann APL
+    df_combined = df_combined.sort_values(by=["Period", "APL_ID"]).reset_index(drop=True)
 
-        # Erstelle ein GeoDataFrame für die aktiven APLs in der letzten Periode
-        last_period = max(model.T)
-        active_apl_ids = [i for i in model.I if model.y[i, last_period].value > 0.5]
-        active_apls_gdf = wuerzburg_gdf[wuerzburg_gdf['Gitter_ID_100m'].isin(active_apl_ids)].copy()
-
-        # Füge Informationen über Nutzung hinzu
-        for idx, row in active_apls_gdf.iterrows():
-            apl_id = row['Gitter_ID_100m']
-            utilization = next((item['utilization'] for item in apl_results 
-                              if item['apl_id'] == apl_id and item['time_period'] == last_period), 0)
-            active_apls_gdf.loc[idx, 'utilization'] = utilization
-            active_apls_gdf.loc[idx, 'demand_served'] = next((item['demand_served'] for item in apl_results 
-                                                           if item['apl_id'] == apl_id and item['time_period'] == last_period), 0)
-
-        # Speichere als GeoJSON
-        active_apls_gdf.to_file('active_apl_locations.geojson', driver='GeoJSON')
-
-        # Zusammenfassung ausgeben
-        print("\nOptimierungsergebnisse wurden gespeichert:")
-        print("1. apl_locations_results.csv - alle APL-Standorte mit Nutzungsstatistiken")
-        print("2. customer_assignments_results.csv - Zuweisungen von Kunden zu APLs")
-        print("3. active_apl_locations.geojson - GeoJSON der aktiven APLs in der letzten Periode")
-
-        # Zusätzlich noch Zusammenfassung ausgeben
-        print("\nZusammenfassung der Ergebnisse:")
-        for t in model.T:
-            active_count = sum(1 for i in model.I if model.y[i, t].value > 0.5)
-            total_demand = sum(model.d[j, t].value for j in model.J)
-            print(f"Periode {t}: {active_count} aktive APLs, Gesamtnachfrage: {total_demand:.2f}")
-    else:
-        print("Problemlösung fehlgeschlagen.")
+    # 6. Export als CSV
+    df_combined.to_csv("./Data/combined_results_with_setup_costs.csv", index=False, sep=";")
+    print("Datei 'combined_results_with_setup_costs.csv' erfolgreich gespeichert.")
+    print(df_combined)
+    print("Objective value:", value(model.objective))
     return
 
 

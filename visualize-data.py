@@ -24,19 +24,22 @@ def _():
 
 
 @app.cell
-def _(gpd):
+def _(gpd, pd):
     wuerzburg_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
     wuerzburg_gdf_200m = gpd.read_file("./Data/wuerzburg_bevoelkerung_200m.geojson")
-    wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
-    return wuerzburg_gdf, wuerzburg_gdf_200m, wuerzburg_gdf_300m
+    potential_locations_gdf = gpd.read_file("./Data/apl_candidates_clusters.geojson")
 
-
-@app.cell
-def _(wuerzburg_gdf, wuerzburg_gdf_200m, wuerzburg_gdf_300m):
-    print(wuerzburg_gdf.shape)
-    print(wuerzburg_gdf_200m.shape)
-    print(wuerzburg_gdf_300m.shape)
-    return
+    #optimization results
+    results_df = pd.read_csv("./Data/combined_results_with_setup_costs.csv", sep=";")
+    apl_ids = results_df['APL_ID'].drop_duplicates()
+    cust_ids = results_df['Customer_ID'].drop_duplicates()
+    apl_gdf = wuerzburg_gdf[wuerzburg_gdf['Gitter_ID_100m'].isin(apl_ids)].copy()
+    cust_gdf = wuerzburg_gdf[wuerzburg_gdf['Gitter_ID_100m'].isin(cust_ids)].copy()
+    apl_gdf = apl_gdf.rename(columns={'Gitter_ID_100m': 'APL_ID', 'geometry': 'APL_geometry'})
+    cust_gdf = cust_gdf.rename(columns={'Gitter_ID_100m': 'Customer_ID', 'geometry': 'Customer_geometry'})
+    results_df = results_df.merge(apl_gdf[['APL_ID', 'APL_geometry']], on='APL_ID', how='left')
+    results_df = results_df.merge(cust_gdf[['Customer_ID', 'Customer_geometry']], on='Customer_ID', how='left')
+    return potential_locations_gdf, wuerzburg_gdf
 
 
 @app.cell
@@ -124,7 +127,7 @@ def _(gpd):
 
 @app.cell
 def _(mo):
-    anzahl_slider = mo.ui.slider(start=0, stop=100, value=0, step=1, label="Number of APLs")
+    anzahl_slider = mo.ui.slider(start=0, stop=50, value=0, step=1, label="Number of APLs")
     return (anzahl_slider,)
 
 
@@ -136,6 +139,7 @@ def _(
     heuristic_APLs,
     mo,
     packstations,
+    potential_locations_gdf,
     wuerzburg_gdf,
 ):
     # Heuristik-Anwendung
@@ -178,6 +182,21 @@ def _(
     layer_200m.add_to(m)
 
     colormap.add_to(m)
+
+    # Potential Locations Layer
+    cluster_layer = folium.FeatureGroup(name='Potential APL Locations (Population Clusters)', show=False)
+    apl_centroids = potential_locations_gdf.copy()
+    apl_centroids["geometry"] = apl_centroids["geometry"].centroid
+
+    for pt in apl_centroids.geometry:
+        lat1, lon1 = pt.y, pt.x 
+        folium.CircleMarker(location=(lat1, lon1),
+                            radius=4,
+                            color="blue",
+                            fill=True,
+                            fill_opacity=0.8).add_to(cluster_layer)
+
+    cluster_layer.add_to(m)
 
     # DHL Layer
     dhl_layer = folium.FeatureGroup(name='DHL Parcel Lockers', show=False)
@@ -379,6 +398,14 @@ def _(interactive_chart, mo, scenario_selection):
         interactive_chart,
         scenario_selection
     ], gap=2, align="center")
+    return
+
+
+@app.cell
+def _(folium):
+    m1 = folium.Map(location=[49.7925, 9.9380], zoom_start=13, tiles='cartodbpositron')
+
+
     return
 
 

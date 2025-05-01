@@ -12,7 +12,8 @@ def _():
     import geopandas as gpd
     from shapely.geometry import Polygon, box, Point
     from sklearn.cluster import KMeans
-    return KMeans, Point, Polygon, gpd, pd
+    import numpy as np
+    return KMeans, Point, Polygon, gpd, np, pd
 
 
 @app.cell
@@ -79,6 +80,13 @@ def _(Point, Polygon, gpd, pd):
 
     print("Daten erfolgreich vorverarbeitet und als GeoJSON gespeichert.")
     return wuerzburg_data, wuerzburg_poly_gdf
+
+
+@app.cell
+def _(wuerzburg_poly_gdf):
+    print(wuerzburg_poly_gdf.crs)
+    print(wuerzburg_poly_gdf.head())
+    return
 
 
 @app.cell
@@ -164,25 +172,39 @@ def _(Polygon, get_top_left_id, gpd, wuerzburg_data):
 
 
 @app.cell
-def _(wuerzburg_poly_gdf):
-    wuerzburg_poly_gdf.head()
-    return
+def _(KMeans, gpd, np, wuerzburg_poly_gdf):
+    # Gitterzellen-Zentren extrahieren
+    coords = np.array([[geom.centroid.x, geom.centroid.y] for geom in wuerzburg_poly_gdf.geometry])
 
+    # KMeans über die Gitterzellen-Zentren
+    n_clusters=50
+    kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(coords, sample_weight=wuerzburg_poly_gdf["Einwohner"])
+    wuerzburg_poly_gdf["cluster"] = kmeans.labels_
 
-@app.cell
-def _(KMeans, gdf, wuerzburg_poly_gdf):
-    # Extrahiere relevante Infos
-    X = wuerzburg_poly_gdf[["geometry"]].values
-
-    # KMeans Clustering
-    kmeans = KMeans(n_clusters=50, random_state=0)
-    gdf["cluster"] = kmeans.fit_predict(X)
-
-    # Cluster-Zentren abrufen
+    # Für jeden Cluster: finde die Zelle, die dem Zentrum am nächsten liegt
     cluster_centers = kmeans.cluster_centers_
-    print(cluster_centers)
-    # cluster_gdf = gpd.GeoDataFrame(geometry=[shapely.geometry.Point(xy) for xy in cluster_centers], crs="EPSG:4326")
-    # cluster_gdf.to_file("./Data/potentielle_apl.geojson", driver="GeoJSON")
+    apl_geoms = []
+    apl_ids = []
+
+    for cluster_id in range(n_clusters):
+        cluster_cells = wuerzburg_poly_gdf[wuerzburg_poly_gdf["cluster"] == cluster_id]
+        cell_coords = np.array([[geom.centroid.x, geom.centroid.y] for geom in cluster_cells.geometry])
+
+        # Index der Zelle, die dem Zentrum am nächsten ist
+        nearest_idx = np.argmin(np.linalg.norm(cell_coords - cluster_centers[cluster_id], axis=1))
+        nearest_cell = cluster_cells.iloc[nearest_idx]
+
+        apl_geoms.append(nearest_cell.geometry)
+        apl_ids.append(nearest_cell.name)
+
+    # 4. GeoDataFrame nur mit Zentrumspunkten (z. B. für Pyomo `I`)
+    apl_candidates_gdf = gpd.GeoDataFrame(geometry=apl_geoms, crs=wuerzburg_poly_gdf.crs)
+    apl_candidates_gdf["cell_id"] = apl_ids  # optional
+    apl_candidates_gdf = apl_candidates_gdf.reset_index(drop=True)
+
+    print(apl_candidates_gdf.shape)
+    print(apl_candidates_gdf.head())
+    print(wuerzburg_poly_gdf.head())
     return
 
 
