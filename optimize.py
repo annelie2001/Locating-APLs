@@ -23,7 +23,7 @@ def _(gpd, pd):
 
     scenarios_df = pd.read_csv("./Data/generated_scenarios.csv", sep=";")
     scenarios_df_filtered = scenarios_df.iloc[[1, 13, 25, 37, 49]] #Erster Monat mit einem Jahr Abstand
-    time_periods = [1, 2] 
+    time_periods = [1, 2, 3, 4, 5] 
 
     wuerzburg_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
     wuerzburg_gdf_projected = wuerzburg_gdf.to_crs(epsg=25832)
@@ -122,7 +122,7 @@ def _(
 
         point1 = row1.iloc[0].geometry.centroid
         point2 = row2.iloc[0].geometry.centroid
-        
+
         return point1.distance(point2)
 
     def calculate_distribution_cost(gdf_projected, valid_pairs):

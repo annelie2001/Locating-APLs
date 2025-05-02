@@ -39,7 +39,7 @@ def _(gpd, pd):
     cust_gdf = cust_gdf.rename(columns={'Gitter_ID_100m': 'Customer_ID', 'geometry': 'Customer_geometry'})
     results_df = results_df.merge(apl_gdf[['APL_ID', 'APL_geometry']], on='APL_ID', how='left')
     results_df = results_df.merge(cust_gdf[['Customer_ID', 'Customer_geometry']], on='Customer_ID', how='left')
-    return potential_locations_gdf, wuerzburg_gdf
+    return potential_locations_gdf, results_df, wuerzburg_gdf
 
 
 @app.cell
@@ -139,7 +139,6 @@ def _(
     heuristic_APLs,
     mo,
     packstations,
-    potential_locations_gdf,
     wuerzburg_gdf,
 ):
     # Heuristik-Anwendung
@@ -179,24 +178,9 @@ def _(
         },
         tooltip=folium.GeoJsonTooltip(fields=['Einwohner'], aliases=['Einwohner:']),
     ).add_to(layer_200m)
-    layer_200m.add_to(m)
+    #layer_200m.add_to(m)
 
     colormap.add_to(m)
-
-    # Potential Locations Layer
-    cluster_layer = folium.FeatureGroup(name='Potential APL Locations (Population Clusters)', show=False)
-    apl_centroids = potential_locations_gdf.copy()
-    apl_centroids["geometry"] = apl_centroids["geometry"].centroid
-
-    for pt in apl_centroids.geometry:
-        lat1, lon1 = pt.y, pt.x 
-        folium.CircleMarker(location=(lat1, lon1),
-                            radius=4,
-                            color="blue",
-                            fill=True,
-                            fill_opacity=0.8).add_to(cluster_layer)
-
-    cluster_layer.add_to(m)
 
     # DHL Layer
     dhl_layer = folium.FeatureGroup(name='DHL Parcel Lockers', show=False)
@@ -246,7 +230,7 @@ def _(
             """
         )
     ], gap=2)
-    return
+    return (layer_100m,)
 
 
 @app.cell
@@ -277,27 +261,27 @@ def _(dynamic_variables, np, simulation_results):
 
 
 @app.cell
-def _(alt, mo, simulation_results):
+def _(alt, simulation_results):
     deliveries_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("Number of deliveries:Q")
     )
 
-    deliveries_chart = mo.ui.altair_chart(deliveries_chart, chart_selection="point")
+    #deliveries_chart = mo.ui.altair_chart(deliveries_chart, chart_selection="point")
 
     apl_users_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("APL users")
     )
 
-    apl_users_chart = mo.ui.altair_chart(apl_users_chart, chart_selection="point")
+    #apl_users_chart = mo.ui.altair_chart(apl_users_chart, chart_selection="point")
 
     market_size_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("Market Size:Q")
     )
 
-    market_size_chart = mo.ui.altair_chart(market_size_chart, chart_selection="point")
+    #market_size_chart = mo.ui.altair_chart(market_size_chart, chart_selection="point")
     return apl_users_chart, deliveries_chart, market_size_chart
 
 
@@ -402,9 +386,76 @@ def _(interactive_chart, mo, scenario_selection):
 
 
 @app.cell
-def _(folium):
-    m1 = folium.Map(location=[49.7925, 9.9380], zoom_start=13, tiles='cartodbpositron')
+def _(potential_locations_gdf):
+    potential_locations_gdf.crs
+    return
 
+
+@app.cell
+def _(folium, layer_100m, mo, potential_locations_gdf, results_df):
+    m1 = folium.Map(location=[49.7925, 9.9380], zoom_start=13, tiles='cartodbpositron')
+    layer_100m.add_to(m1)
+
+    # Potential Locations Layer
+    cluster_layer = folium.FeatureGroup(name='Potential APL Locations (Population Clusters)', show=False)
+    apl_centroids = potential_locations_gdf.copy()
+    apl_centroids["geometry"] = apl_centroids["geometry"].centroid
+
+    for pt in apl_centroids.geometry:
+        lat1, lon1 = pt.y, pt.x 
+        folium.CircleMarker(location=(lat1, lon1),
+                            radius=4,
+                            color="blue",
+                            fill=True,
+                            fill_opacity=0.8).add_to(cluster_layer)
+
+    cluster_layer.add_to(m1)
+
+    # Für jede Periode ein Layer
+    for t in sorted(results_df['Period'].unique()):
+        group = folium.FeatureGroup(name=f"Period {t}", show=False)
+
+        df_t = results_df[results_df['Period'] == t]
+
+        for apl_id, sub_df in df_t.groupby("APL_ID"):
+            apl_point = sub_df['APL_geometry'].iloc[0].centroid
+            popup_text = f"APL {apl_id}<br>Kunden: {sub_df['Customer_ID'].nunique()}"
+            folium.CircleMarker(
+                location=[apl_point.y, apl_point.x],
+                radius=4,
+                color="#3182bd",
+                fill=True,
+                fill_opacity=0.8,
+                popup=popup_text
+            ).add_to(group)
+
+            # Verbindungen zu Kunden
+            for _, row_ in sub_df.iterrows():
+                apl_centroid = row_['APL_geometry'].centroid
+                cust_centroid = row_['Customer_geometry'].centroid
+                folium.PolyLine(
+                    locations=[[apl_centroid.y, apl_centroid.x],
+                               [cust_centroid.y, cust_centroid.x]],
+                    color="#3182bd",
+                    weight=1
+                ).add_to(group)
+
+        group.add_to(m1)
+
+    folium.LayerControl(collapsed=False).add_to(m1)
+
+    mo.vstack([
+        mo.md(
+            r"""
+            # Optimization
+
+            In the next step, I modeled the problem as a Capacitated **Facility Location Problem (CFLP)**. The initial dataset consists of 100-meter grid cells across the city of Würzburg, each representing a potential facility site or demand point. However, including all grid cells as possible facility locations would result in an intractably large number of decision variables.  
+            To address this issue, I used clustering techniques to reduce the candidate locations to **50 population-based clusters**, which serve as aggregated potential APL sites. For the demand sites, I started of with a **300-meter grid**. The resulting optimization model is implemented in Pyomo and solved using the CPLEX solver.  
+            I solve the problem over five periods (first month of five consecutive years). However, as you can see in the interactive map below, all 50 potential APL sites are setup after the second period. 
+            """
+        ),
+        m1
+    ], align="center", gap=2)
 
     return
 
