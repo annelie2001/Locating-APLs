@@ -386,12 +386,6 @@ def _(interactive_chart, mo, scenario_selection):
 
 
 @app.cell
-def _(potential_locations_gdf):
-    potential_locations_gdf.crs
-    return
-
-
-@app.cell
 def _(folium, layer_100m, mo, potential_locations_gdf, results_df):
     m1 = folium.Map(location=[49.7925, 9.9380], zoom_start=13, tiles='cartodbpositron')
     layer_100m.add_to(m1)

@@ -8,12 +8,13 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
+    import marimo as mo
     import pandas as pd
     import geopandas as gpd
     from shapely.geometry import Polygon, box, Point
     from sklearn.cluster import KMeans
     import numpy as np
-    return KMeans, Point, Polygon, gpd, np, pd
+    return KMeans, Point, Polygon, gpd, mo, np, pd
 
 
 @app.cell
@@ -21,6 +22,12 @@ def _(Point, gpd):
     wuerzburg_center_wgs84 = gpd.GeoSeries([Point(9.9534, 49.7913)], crs='EPSG:4326')
     wuerzburg_center_3035 = wuerzburg_center_wgs84.to_crs('EPSG:3035')
     print(wuerzburg_center_3035)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""##100m-grid population data""")
     return
 
 
@@ -83,9 +90,8 @@ def _(Point, Polygon, gpd, pd):
 
 
 @app.cell
-def _(wuerzburg_poly_gdf):
-    print(wuerzburg_poly_gdf.crs)
-    print(wuerzburg_poly_gdf.head())
+def _(mo):
+    mo.md("""##200m-grid population data""")
     return
 
 
@@ -135,6 +141,12 @@ def _(Polygon, gpd, wuerzburg_data):
 
 
 @app.cell
+def _(mo):
+    mo.md(r"""##300m-grid population data""")
+    return
+
+
+@app.cell
 def _(Polygon, get_top_left_id, gpd, wuerzburg_data):
     # 300m-Koordinaten bestimmen
     wuerzburg_data['x_300m'] = (wuerzburg_data['x_mp_100m'] // 300) * 300
@@ -172,19 +184,25 @@ def _(Polygon, get_top_left_id, gpd, wuerzburg_data):
 
 
 @app.cell
+def _(mo):
+    mo.md("""##Population clusters as APL locations""")
+    return
+
+
+@app.cell
 def _(KMeans, gpd, np, wuerzburg_poly_gdf):
     # Gitterzellen-Zentren extrahieren
     coords = np.array([[geom.centroid.x, geom.centroid.y] for geom in wuerzburg_poly_gdf.geometry])
 
     # KMeans über die Gitterzellen-Zentren
-    n_clusters=50
+    n_clusters=60
     kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(coords, sample_weight=wuerzburg_poly_gdf["Einwohner"])
     wuerzburg_poly_gdf["cluster"] = kmeans.labels_
 
     # Für jeden Cluster: finde die Zelle, die dem Zentrum am nächsten liegt
     cluster_centers = kmeans.cluster_centers_
     apl_geoms = []
-    apl_ids = []
+    apl_records = []
 
     for cluster_id in range(n_clusters):
         cluster_cells = wuerzburg_poly_gdf[wuerzburg_poly_gdf["cluster"] == cluster_id]
@@ -195,16 +213,31 @@ def _(KMeans, gpd, np, wuerzburg_poly_gdf):
         nearest_cell = cluster_cells.iloc[nearest_idx]
 
         apl_geoms.append(nearest_cell.geometry)
-        apl_ids.append(nearest_cell.name)
+        apl_records.append({
+            "Gitter_ID_100m": nearest_cell["Gitter_ID_100m"],
+            "x_mp_100m": nearest_cell["x_mp_100m"],
+            "y_mp_100m": nearest_cell["y_mp_100m"],
+            "Einwohner": nearest_cell["Einwohner"],
+            "cluster": cluster_id
+        })
 
     # 4. GeoDataFrame nur mit Zentrumspunkten (z. B. für Pyomo `I`)
-    apl_candidates_gdf = gpd.GeoDataFrame(geometry=apl_geoms, crs=wuerzburg_poly_gdf.crs)
-    apl_candidates_gdf["cell_id"] = apl_ids  # optional
-    apl_candidates_gdf = apl_candidates_gdf.reset_index(drop=True)
+    apl_candidates_gdf = gpd.GeoDataFrame(apl_records, geometry=apl_geoms, crs=wuerzburg_poly_gdf.crs)
 
-    print(apl_candidates_gdf.shape)
-    print(apl_candidates_gdf.head())
-    print(wuerzburg_poly_gdf.head())
+    apl_candidates_gdf.to_file("./Data/apl_candidates_clusters.geojson", driver="GeoJSON")
+    print("Daten erfolgreich vorverarbeitet und als GeoJSON gespeichert.")
+    return (apl_candidates_gdf,)
+
+
+@app.cell
+def _(apl_candidates_gdf):
+    print(apl_candidates_gdf)
+    return
+
+
+@app.cell
+def _(wuerzburg_poly_gdf):
+    print(wuerzburg_poly_gdf)
     return
 
 

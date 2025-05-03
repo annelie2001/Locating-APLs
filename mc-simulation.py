@@ -21,15 +21,16 @@ def _(gpd, pd):
     results_df = pd.read_csv("./Data/combined_results_with_setup_costs.csv", sep=";")
     # Demand from Vensim simulation
     demand_df = pd.read_csv("./Data/results-sim2.csv", sep=";")
+    demand_df_filtered = demand_df.iloc[[1, 13, 25, 37, 49]]
     # 300m-grid population data
     wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
-    return demand_df, results_df, wuerzburg_gdf_300m
+    return demand_df_filtered, results_df, wuerzburg_gdf_300m
 
 
 @app.cell
-def _(demand_df, wuerzburg_gdf_300m):
+def _(demand_df_filtered, wuerzburg_gdf_300m):
     # Demand share per cell
-    total_demand_per_period = demand_df["Number of deliveries : S2"].values[:60]
+    total_demand_per_period = demand_df_filtered["Number of deliveries : S2"].values
     total_population = wuerzburg_gdf_300m["Einwohner"].sum()
     wuerzburg_gdf_300m["demand_share"] = wuerzburg_gdf_300m["Einwohner"] / total_population
     return (total_demand_per_period,)
@@ -39,17 +40,17 @@ def _(demand_df, wuerzburg_gdf_300m):
 def _(pd, total_demand_per_period, wuerzburg_gdf_300m):
     # Demand per cell and period 
 
-    periods = range(60)
+    periods = [0, 1, 2, 3, 4]
     demand_list = []
 
     for t in periods:
         total_demand_t = total_demand_per_period[t]
-    
+
         for _, row in wuerzburg_gdf_300m.iterrows():
             j = row["Gitter_ID_100m"]
             share = row["demand_share"]
             demand = total_demand_t * share
-        
+
             demand_list.append({"j": j, "t": t, "demand": demand})
 
     demand_jt_df = pd.DataFrame(demand_list)
@@ -91,6 +92,7 @@ def _(defaultdict, np):
 
         for run in range(num_runs):
             # 1. Draw demand ~ N(mean, std) per cell and period
+            print(f"🔄 Simulation {run + 1}/{num_runs} gestartet...")
             demand_samples = demand_jt_df.copy()
             demand_samples["sample"] = np.random.normal(
                 loc=demand_samples["mean"],
@@ -101,6 +103,7 @@ def _(defaultdict, np):
             apl_demand = defaultdict(float)
 
             for (t, apl), customers in assignment_map.items():
+                # print(f"  ⏳ Bearbeite Periode {t}/{len(periods)}...")
                 for j in customers:
                     demand_val = demand_samples[
                         (demand_samples["j"] == j) & (demand_samples["t"] == t)
@@ -115,9 +118,11 @@ def _(defaultdict, np):
                 total += 1
                 if total_demand > cap:
                     overloads += 1
+                    print(f"⚠️ APL {apl} überlastet in Periode {t} (Last: {total_demand}, Kapazität: {cap})")
 
             reliability = 1 - (overloads / total)
             overloaded_counts.append(reliability)
+            print(f"✅ Simulation {run + 1} abgeschlossen.\n")
 
         # Return result summary
         reliability_mean = np.mean(overloaded_counts)
@@ -129,7 +134,8 @@ def _(defaultdict, np):
             "threshold": reliability_threshold,
             "runs": num_runs,
         }
-
+    
+        print("🎉 Alle Simulationen abgeschlossen.")
         return result_summary, overloaded_counts
 
     return (run_monte_carlo_simulation,)
@@ -141,7 +147,7 @@ def _(demand_jt_df, results_df, run_monte_carlo_simulation):
         demand_jt_df=demand_jt_df,
         results_df=results_df,
         apl_capacity=6000,  # z.B. 50 Lieferungen pro APL und Periode
-        num_runs=1000,
+        num_runs=50,
         reliability_threshold=0.95,
         random_seed=42
     )
