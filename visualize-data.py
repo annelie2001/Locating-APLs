@@ -391,7 +391,7 @@ def _(folium, layer_100m, mo, potential_locations_gdf, results_df):
     layer_100m.add_to(m1)
 
     # Potential Locations Layer
-    cluster_layer = folium.FeatureGroup(name='Potential APL Locations (Population Clusters)', show=False)
+    cluster_layer = folium.FeatureGroup(name='Potential APL Locations (Population Clusters)', show=True)
     apl_centroids = potential_locations_gdf.copy()
     apl_centroids["geometry"] = apl_centroids["geometry"].centroid
 
@@ -436,7 +436,7 @@ def _(folium, layer_100m, mo, potential_locations_gdf, results_df):
 
         group.add_to(m1)
 
-    folium.LayerControl(collapsed=False).add_to(m1)
+    folium.LayerControl(collapsed=True, position="bottomleft").add_to(m1)
 
     mo.vstack([
         mo.md(

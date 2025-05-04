@@ -195,7 +195,7 @@ def _(KMeans, gpd, np, wuerzburg_poly_gdf):
     coords = np.array([[geom.centroid.x, geom.centroid.y] for geom in wuerzburg_poly_gdf.geometry])
 
     # KMeans über die Gitterzellen-Zentren
-    n_clusters=60
+    n_clusters=50
     kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(coords, sample_weight=wuerzburg_poly_gdf["Einwohner"])
     wuerzburg_poly_gdf["cluster"] = kmeans.labels_
 
@@ -226,18 +226,6 @@ def _(KMeans, gpd, np, wuerzburg_poly_gdf):
 
     apl_candidates_gdf.to_file("./Data/apl_candidates_clusters.geojson", driver="GeoJSON")
     print("Daten erfolgreich vorverarbeitet und als GeoJSON gespeichert.")
-    return (apl_candidates_gdf,)
-
-
-@app.cell
-def _(apl_candidates_gdf):
-    print(apl_candidates_gdf)
-    return
-
-
-@app.cell
-def _(wuerzburg_poly_gdf):
-    print(wuerzburg_poly_gdf)
     return
 
 

@@ -8,13 +8,14 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
+    import marimo as mo
     import pyomo.environ as pyo
     from pyomo.environ import value
     import pandas as pd
     import geopandas as gpd
     from rtree import index
     from shapely.geometry import Point
-    return gpd, index, pd, pyo, value
+    return gpd, index, mo, pd, pyo, value
 
 
 @app.cell
@@ -22,19 +23,19 @@ def _(gpd, pd):
     # Load data
 
     scenarios_df = pd.read_csv("./Data/generated_scenarios.csv", sep=";")
-    scenarios_df_filtered = scenarios_df.iloc[[1, 13, 25, 37, 49]] #Erster Monat mit einem Jahr Abstand
-    time_periods = [1, 2, 3, 4, 5] 
+    scenarios_df_filtered = scenarios_df.iloc[[1, 13, 25, 37, 49, 61, 73, 85, 97, 109]] #Erster Monat mit einem Jahr Abstand
+    time_periods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] 
 
     wuerzburg_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
     wuerzburg_gdf_projected = wuerzburg_gdf.to_crs(epsg=25832)
-    grid_cells = wuerzburg_gdf.loc[:, 'Gitter_ID_100m']
+    # grid_cells = wuerzburg_gdf.loc[:, 'Gitter_ID_100m']
 
     wuerzburg_gdf_200m = gpd.read_file("./Data/wuerzburg_bevoelkerung_200m.geojson")
-    wuerzburg_gdf_projected_200m = wuerzburg_gdf_200m.to_crs(epsg=25832)
+    wuerzburg_gdf_200m_projected = wuerzburg_gdf_200m.to_crs(epsg=25832)
     grid_cells_200m = wuerzburg_gdf_200m.loc[:, 'Gitter_ID_100m']
 
     wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
-    wuerzburg_gdf_projected_300m = wuerzburg_gdf_300m.to_crs(epsg=25832)
+    wuerzburg_gdf_300m_projected = wuerzburg_gdf_300m.to_crs(epsg=25832)
     grid_cells_300m = wuerzburg_gdf_300m.loc[:, 'Gitter_ID_100m']
 
     total_population = wuerzburg_gdf["Einwohner"].sum()
@@ -50,14 +51,26 @@ def _(gpd, pd):
     return (
         apl_cells,
         apl_clusters_gdf_projected,
-        grid_cells_300m,
+        grid_cells_200m,
         max_service_distance,
         scenarios_df_filtered,
         time_periods,
         total_population,
+        wuerzburg_gdf_200m_projected,
         wuerzburg_gdf_projected,
-        wuerzburg_gdf_projected_300m,
     )
+
+
+@app.cell
+def _(scenarios_df_filtered):
+    print(scenarios_df_filtered.loc[:, "Scenario10"])
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""# Calculate demand, valid pairs and distribution costs""")
+    return
 
 
 @app.cell
@@ -66,7 +79,7 @@ def _(
     scenarios_df_filtered,
     time_periods,
     total_population,
-    wuerzburg_gdf_projected_300m,
+    wuerzburg_gdf_200m_projected,
 ):
     # Build the spacial index
     def build_spatial_index(gdf):
@@ -77,7 +90,7 @@ def _(
             idx.insert(i, bounds)
         return idx, {i: row['Gitter_ID_100m'] for i, row in gdf.iterrows()}
 
-    spatial_idx, idx_to_id = build_spatial_index(wuerzburg_gdf_projected_300m)
+    spatial_idx, idx_to_id = build_spatial_index(wuerzburg_gdf_200m_projected)
 
     # Determine the nearest neighbors of each cell
     def get_nearest_neighbors(gdf, spatial_idx, idx_to_id, cell_idx, max_distance=2000, k=20):
@@ -150,17 +163,14 @@ def _(
     calculate_demand_per_cell,
     calculate_distribution_cost,
     max_service_distance,
+    wuerzburg_gdf_200m_projected,
     wuerzburg_gdf_projected,
-    wuerzburg_gdf_projected_300m,
 ):
-    demand_scenario_10 = calculate_demand_per_cell(wuerzburg_gdf_projected_300m, 10)
-
-    #valid_connections = get_valid_connections(wuerzburg_gdf_projected_300m, spatial_idx, idx_to_id, max_service_distance, max_neighbors)
-    #valid_pairs = [(i, j) for j in grid_cells for i in valid_connections.get(j, [])]
+    demand_scenario_neutral = calculate_demand_per_cell(wuerzburg_gdf_200m_projected, 10)
 
     valid_pairs = []
 
-    for _, customer_row in wuerzburg_gdf_projected_300m.iterrows():
+    for _, customer_row in wuerzburg_gdf_200m_projected.iterrows():
         customer_id = customer_row["Gitter_ID_100m"]
         customer_polygon = customer_row["geometry"]
         customer_centroid = customer_polygon.centroid
@@ -177,16 +187,23 @@ def _(
 
     print(f"Number of valid pairs: {len(valid_pairs)}")
 
-    distribution_cost = calculate_distribution_cost(wuerzburg_gdf_projected, valid_pairs)
-    return demand_scenario_10, distribution_cost, valid_pairs
+    distribution_cost = calculate_distribution_cost(wuerzburg_gdf_projected, valid_pairs) 
+    #100m-gdf, weil cluster-cells evtl nicht in 200m/300m-gdf sind
+    return demand_scenario_neutral, distribution_cost, valid_pairs
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""# Define model and constraints""")
+    return
 
 
 @app.cell
 def _(
     apl_cells,
-    demand_scenario_10,
+    demand_scenario_neutral,
     distribution_cost,
-    grid_cells_300m,
+    grid_cells_200m,
     pyo,
     time_periods,
     valid_pairs,
@@ -197,15 +214,20 @@ def _(
 
     # Sets
     model.I = pyo.Set(initialize=apl_cells)   # APL-Standorte (IDs oder Indizes)
-    model.J = pyo.Set(initialize=grid_cells_300m)  # Kundenstandorte
+    model.J = pyo.Set(initialize=grid_cells_200m)  # Kundenstandorte
     model.T = pyo.Set(initialize=time_periods)  # Zeithorizont
 
     # Parameter
     model.c = pyo.Param(model.I, model.J, initialize=distribution_cost, within=pyo.NonNegativeReals)
-    model.f = pyo.Param(model.I, model.T, initialize=lambda m, i, t: 5500 if t == 1 else 0) # Inflation noch einberechnen
-    model.d = pyo.Param(model.J, model.T, initialize=demand_scenario_10, within=pyo.NonNegativeReals) # Nur Szenario 10
-    model.a = pyo.Param(model.I, initialize=lambda model, i: 6000)  # 6000 Pakete/Monat
-    model.m = pyo.Param(initialize=0.0)
+    model.f = pyo.Param(
+        model.I,
+        model.T,
+        initialize=lambda m, i, t: 5500 * (1.01) ** (t - 1),
+        within=pyo.NonNegativeReals
+    )
+    model.d = pyo.Param(model.J, model.T, initialize=demand_scenario_neutral, within=pyo.NonNegativeReals) # Nur Szenario 10
+    model.a = pyo.Param(initialize=4000)  # 4000 Pakete/Monat
+    model.m = pyo.Param(initialize=0.1)
 
     # Decision Variables
     model.x = pyo.Var(model.ValidConnections, model.T, domain=pyo.Binary)
@@ -253,26 +275,23 @@ def _(model, pyo):
     def capacity_rule(m, i, t):
         # Nur gültige Verbindungen berücksichtigen
         valid_customers = [j for j in m.J if (i, j) in m.ValidConnections]
-        return sum(m.d[j, t] * m.x[i, j, t] for j in valid_customers) <= m.a[i] * m.y[i, t]
+        return sum(m.d[j, t] * m.x[i, j, t] for j in valid_customers) <= m.a * m.y[i, t]
 
     model.capacity = pyo.Constraint(model.I, model.T, rule=capacity_rule)
 
     # Minimale Auslastung für alle APLs zusammen
-    def min_utilization_rule(m, t):
-        active_capacity = sum(m.a[i] * m.y[i, t] for i in m.I)
-        # if active_capacity == 0:
-        #     return pyo.Constraint.Skip
-        total_demand = sum(m.d[j, t] for j in m.J)
-        return total_demand >= m.m * active_capacity
+    def min_utilization_rule(m, i, t):
+        assigned_demand = sum(m.x[i, j, t] * m.d[j, t] for j in m.J if (i, j) in m.ValidConnections)
+        min_demand_required = m.m * m.a * m.y[i, t]
+        return assigned_demand >= min_demand_required
 
-    model.min_utilization = pyo.Constraint(model.T, rule=min_utilization_rule)
+    model.min_utilization = pyo.Constraint(model.I, model.T, rule=min_utilization_rule)
     return
 
 
 @app.cell
-def _(model):
-    print(list(model.component_map()))
-
+def _(mo):
+    mo.md(r"""# Solve model and save results""")
     return
 
 
@@ -286,14 +305,13 @@ def _(model, pyo):
 
     if results.solver.termination_condition == pyo.TerminationCondition.optimal:
         print("Optimal solution found.")
-        #model.pprint()
     else:
         print("Solver did not find an optimal solution. Termination condition:", results.solver.termination_condition)
     return
 
 
 @app.cell
-def _(model, pd, value):
+def _(model, pd, pyo, value):
     # 1. Extrahiere x-Variablen (Zuweisungen)
     x_data = []
     for (i, j, t) in model.x:
@@ -320,6 +338,8 @@ def _(model, pd, value):
     df_combined["Demand"] = df_combined.apply(lambda row: value(model.d[row["Customer_ID"], row["Period"]]), axis=1)
     df_combined["Cost_per_unit"] = df_combined.apply(lambda row: value(model.c[row["APL_ID"], row["Customer_ID"]]), axis=1)
     df_combined["Total_Cost"] = df_combined["x"] * df_combined["Cost_per_unit"]
+    df_combined["Num_APLs"] = df_combined["y"]
+
 
     # 5. Sortieren nach Zeit, dann APL
     df_combined = df_combined.sort_values(by=["Period", "APL_ID"]).reset_index(drop=True)
@@ -329,6 +349,27 @@ def _(model, pd, value):
     print("Datei 'combined_results_with_setup_costs.csv' erfolgreich gespeichert.")
     print(df_combined)
     print("Objective value:", value(model.objective))
+
+    for t in model.T:
+        apls_in_t = sum(pyo.value(model.y[i, t]) for i in model.I)
+        print(f"Period {t}: {apls_in_t} APLs deployed")
+    return (df_y,)
+
+
+@app.cell
+def _(df_y):
+    import matplotlib.pyplot as plt
+
+    apl_over_time = df_y.groupby("Period")["y"].sum().reset_index()
+
+    plt.figure(figsize=(8, 4))
+    plt.plot(apl_over_time["Period"], apl_over_time["y"], marker="o", color="steelblue")
+    plt.title("Total Number of APLs per Period")
+    plt.xlabel("Period")
+    plt.ylabel("Number of APLs")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
     return
 
 
