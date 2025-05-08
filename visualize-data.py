@@ -207,7 +207,7 @@ def _(
 
     heuristic_layer.add_to(m)
 
-    folium.LayerControl(position='bottomleft', collapsed=False).add_to(m)
+    folium.LayerControl(collapsed=True, position='bottomleft').add_to(m)
 
     mo.vstack([
         mo.md(
@@ -261,27 +261,27 @@ def _(dynamic_variables, np, simulation_results):
 
 
 @app.cell
-def _(alt, simulation_results):
+def _(alt, mo, simulation_results):
     deliveries_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("Number of deliveries:Q")
     )
 
-    #deliveries_chart = mo.ui.altair_chart(deliveries_chart, chart_selection="point")
+    deliveries_chart = mo.ui.altair_chart(deliveries_chart, chart_selection="point")
 
     apl_users_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("APL users")
     )
 
-    #apl_users_chart = mo.ui.altair_chart(apl_users_chart, chart_selection="point")
+    apl_users_chart = mo.ui.altair_chart(apl_users_chart, chart_selection="point")
 
     market_size_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("Market Size:Q")
     )
 
-    #market_size_chart = mo.ui.altair_chart(market_size_chart, chart_selection="point")
+    market_size_chart = mo.ui.altair_chart(market_size_chart, chart_selection="point")
     return apl_users_chart, deliveries_chart, market_size_chart
 
 
@@ -317,6 +317,7 @@ def _(alt, pd):
     scenario_long_df = pd.read_csv("./Data/generated_scenarios.csv", sep=";")
     scenario_long_df["Month"] = scenario_long_df.index
     scenario_long_df = scenario_long_df.melt(id_vars="Month", var_name="Scenario", value_name="Demand")
+    scenario_long_df['Scenario_Number'] = scenario_long_df['Scenario'].str.replace('Scenario', '').astype(int)
 
     color_scale = alt.Scale(scheme="redyellowgreen")
     return color_scale, scenario_long_df
@@ -345,7 +346,8 @@ def _(alt, color_scale, scenario_long_df, scenario_selection):
     interactive_chart = alt.Chart(filtered_df).mark_line().encode(
         x=alt.X("Month:Q", title="Month"),
         y=alt.Y("Demand:Q", title="Demand"),
-        color=alt.Color("Scenario:N", scale=color_scale, legend=alt.Legend(title="Scenario")),
+        color=alt.Color("Scenario_Number:N", scale=color_scale, legend=alt.Legend(title="Scenario")),
+        tooltip=['Scenario', 'Month', 'Demand'] 
     ).properties(
         width=700,
         height=400,
@@ -405,6 +407,20 @@ def _(folium, layer_100m, mo, potential_locations_gdf, results_df):
 
     cluster_layer.add_to(m1)
 
+    #Underperformer
+    apls_low_utilization = ['100mN29600E43224', '100mN29621E43137']
+    highlighted_apls = apl_centroids[apl_centroids["Gitter_ID_100m"].isin(apls_low_utilization)]
+    low_utilization_layer = folium.FeatureGroup(name="Low capacity utilization APLs", show=False)
+
+    for _, apl in highlighted_apls.iterrows():
+        folium.Marker(
+            location=[apl['geometry'].y, apl['geometry'].x],
+            popup= "<= 20% capacity utilization in all periods",
+            icon=folium.Icon(color='red', icon='info-sign')  # Rote Farbe zur Hervorhebung
+        ).add_to(low_utilization_layer)
+
+    low_utilization_layer.add_to(m1)
+
     # Für jede Periode ein Layer
     for t in sorted(results_df['Period'].unique()):
         group = folium.FeatureGroup(name=f"Period {t}", show=False)
@@ -445,7 +461,7 @@ def _(folium, layer_100m, mo, potential_locations_gdf, results_df):
 
             In the next step, I modeled the problem as a Capacitated **Facility Location Problem (CFLP)**. The initial dataset consists of 100-meter grid cells across the city of Würzburg, each representing a potential facility site or demand point. However, including all grid cells as possible facility locations would result in an intractably large number of decision variables.  
             To address this issue, I used clustering techniques to reduce the candidate locations to **50 population-based clusters**, which serve as aggregated potential APL sites. For the demand sites, I started of with a **300-meter grid**. The resulting optimization model is implemented in Pyomo and solved using the CPLEX solver.  
-            I solve the problem over five periods (first month of five consecutive years). However, as you can see in the interactive map below, all 50 potential APL sites are setup after the second period. 
+            I solve the problem over ten periods (first month of ten consecutive years).
             """
         ),
         m1

@@ -19,12 +19,19 @@ def _():
 def _(gpd, pd):
     # Optimization results
     results_df = pd.read_csv("./Data/combined_results_with_setup_costs.csv", sep=";")
+    #Results from heuristic approach
+    heuristic_results_df = pd.read_csv("./Data/heuristic_results.csv", sep=";")
     # Demand from Vensim simulation
     demand_df = pd.read_csv("./Data/results-sim2.csv", sep=";")
     demand_df_filtered = demand_df.iloc[[1, 13, 25, 37, 49]]
     # 300m-grid population data
     wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
-    return demand_df_filtered, results_df, wuerzburg_gdf_300m
+    return (
+        demand_df_filtered,
+        heuristic_results_df,
+        results_df,
+        wuerzburg_gdf_300m,
+    )
 
 
 @app.cell
@@ -134,7 +141,7 @@ def _(defaultdict, np):
             "threshold": reliability_threshold,
             "runs": num_runs,
         }
-    
+
         print("🎉 Alle Simulationen abgeschlossen.")
         return result_summary, overloaded_counts
 
@@ -146,7 +153,7 @@ def _(demand_jt_df, results_df, run_monte_carlo_simulation):
     result_summary, reliability_runs = run_monte_carlo_simulation(
         demand_jt_df=demand_jt_df,
         results_df=results_df,
-        apl_capacity=6000,  # z.B. 50 Lieferungen pro APL und Periode
+        apl_capacity=4000,
         num_runs=50,
         reliability_threshold=0.95,
         random_seed=42
@@ -154,6 +161,21 @@ def _(demand_jt_df, results_df, run_monte_carlo_simulation):
 
     print(result_summary)
 
+    return
+
+
+@app.cell
+def _(demand_jt_df, heuristic_results_df, run_monte_carlo_simulation):
+    result_summary_heuristic, reliability_runs_heuristic = run_monte_carlo_simulation(
+        demand_jt_df=demand_jt_df,
+        results_df=heuristic_results_df,
+        apl_capacity=4000,
+        num_runs=50,
+        reliability_threshold=0.95,
+        random_seed=42
+    )
+
+    print(result_summary_heuristic)
     return
 
 

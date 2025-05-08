@@ -47,16 +47,16 @@ def _(gpd, pd):
     # Global parameters
 
     max_service_distance = 2000  # Max distance in meters
-    max_neighbors = 10  # Max distance in terms of grid cells
+    max_neighbors = 15  # Max distance in terms of grid cells
     return (
         apl_cells,
         apl_clusters_gdf_projected,
-        grid_cells_200m,
+        grid_cells_300m,
         max_service_distance,
         scenarios_df_filtered,
         time_periods,
         total_population,
-        wuerzburg_gdf_200m_projected,
+        wuerzburg_gdf_300m_projected,
         wuerzburg_gdf_projected,
     )
 
@@ -79,7 +79,7 @@ def _(
     scenarios_df_filtered,
     time_periods,
     total_population,
-    wuerzburg_gdf_200m_projected,
+    wuerzburg_gdf_300m_projected,
 ):
     # Build the spacial index
     def build_spatial_index(gdf):
@@ -90,7 +90,7 @@ def _(
             idx.insert(i, bounds)
         return idx, {i: row['Gitter_ID_100m'] for i, row in gdf.iterrows()}
 
-    spatial_idx, idx_to_id = build_spatial_index(wuerzburg_gdf_200m_projected)
+    spatial_idx, idx_to_id = build_spatial_index(wuerzburg_gdf_300m_projected)
 
     # Determine the nearest neighbors of each cell
     def get_nearest_neighbors(gdf, spatial_idx, idx_to_id, cell_idx, max_distance=2000, k=20):
@@ -163,14 +163,14 @@ def _(
     calculate_demand_per_cell,
     calculate_distribution_cost,
     max_service_distance,
-    wuerzburg_gdf_200m_projected,
+    wuerzburg_gdf_300m_projected,
     wuerzburg_gdf_projected,
 ):
-    demand_scenario_neutral = calculate_demand_per_cell(wuerzburg_gdf_200m_projected, 10)
+    demand_scenario_neutral = calculate_demand_per_cell(wuerzburg_gdf_300m_projected, 10)
 
     valid_pairs = []
 
-    for _, customer_row in wuerzburg_gdf_200m_projected.iterrows():
+    for _, customer_row in wuerzburg_gdf_300m_projected.iterrows():
         customer_id = customer_row["Gitter_ID_100m"]
         customer_polygon = customer_row["geometry"]
         customer_centroid = customer_polygon.centroid
@@ -203,7 +203,7 @@ def _(
     apl_cells,
     demand_scenario_neutral,
     distribution_cost,
-    grid_cells_200m,
+    grid_cells_300m,
     pyo,
     time_periods,
     valid_pairs,
@@ -214,7 +214,7 @@ def _(
 
     # Sets
     model.I = pyo.Set(initialize=apl_cells)   # APL-Standorte (IDs oder Indizes)
-    model.J = pyo.Set(initialize=grid_cells_200m)  # Kundenstandorte
+    model.J = pyo.Set(initialize=grid_cells_300m)  # Kundenstandorte
     model.T = pyo.Set(initialize=time_periods)  # Zeithorizont
 
     # Parameter
@@ -227,7 +227,7 @@ def _(
     )
     model.d = pyo.Param(model.J, model.T, initialize=demand_scenario_neutral, within=pyo.NonNegativeReals) # Nur Szenario 10
     model.a = pyo.Param(initialize=4000)  # 4000 Pakete/Monat
-    model.m = pyo.Param(initialize=0.1)
+    model.m = pyo.Param(initialize=0)   # minimum usage
 
     # Decision Variables
     model.x = pyo.Var(model.ValidConnections, model.T, domain=pyo.Binary)
@@ -353,7 +353,17 @@ def _(model, pd, pyo, value):
     for t in model.T:
         apls_in_t = sum(pyo.value(model.y[i, t]) for i in model.I)
         print(f"Period {t}: {apls_in_t} APLs deployed")
-    return (df_y,)
+    return df_combined, df_y
+
+
+@app.cell
+def _(df_combined):
+    demand_per_apl = df_combined.groupby(["APL_ID", "Period"])["Demand"].sum().reset_index()
+    demand_per_apl_filtered = demand_per_apl[demand_per_apl["Demand"] < 800]
+
+    print(demand_per_apl_filtered)
+    print(demand_per_apl_filtered["APL_ID"].value_counts())
+    return
 
 
 @app.cell
