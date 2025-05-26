@@ -297,7 +297,7 @@ def _(model, pd, value):
     for (i, j, t) in model.x:
         x_val = value(model.x[i, j, t])
         if x_val > 1e-6:  # Nur wenn APL i dem Kunden j in Periode t zugewiesen ist
-            x_data.append({"APL_ID": i, "Customer_ID": j, "Period": t, "x": x_val})
+            x_data.append({"APL_ID": i, "Customer_ID": j, "Period": t})
     df_x = pd.DataFrame(x_data)
 
     # 2. Extrahiere y-Variablen (APL geöffnet)
@@ -314,11 +314,8 @@ def _(model, pd, value):
     # 3. Merge x und y
     df_combined = df_x.merge(df_y, on=["APL_ID", "Period"], how="left")
 
-    # 4. Zusätzliche Spalten: Demand, Kosten
+    # 4. Demand-Spalte
     df_combined["Demand"] = df_combined.apply(lambda row: value(model.d[row["Customer_ID"], row["Period"]]), axis=1)
-    #df_combined["Cost_per_unit"] = df_combined.apply(lambda row: value(model.c[row["APL_ID"], row["Customer_ID"]]), axis=1)
-    #df_combined["Total_Cost"] = df_combined["x"] * df_combined["Cost_per_unit"]
-    df_combined["Num_APLs"] = df_combined["y"]
 
 
     # 5. Sortieren nach Zeit, dann APL
@@ -329,6 +326,7 @@ def _(model, pd, value):
     print("Datei 'combined_results_with_setup_costs.csv' erfolgreich gespeichert.")
     df_combined
     print("Objective value:", value(model.objective))
+    print(df_combined["Demand"].mean())
     return
 
 
@@ -356,10 +354,15 @@ def _(pd, pyo):
                     if (i, j) in model.ValidConnections:
                         if any(pyo.value(model.x[i, j, t]) > 0.5 for t in model.T):
                             supplied_customers.add(j)
-
+            
+                #Summe der Nachfrage über alle Kunden und Perioden
+                total_demand_per_apl = sum(
+                    sum(pyo.value(model.d[j, t]) * pyo.value(model.x[i, j, t]) for j in supplied_customers) for t in model.T
+                )
                 # Auslastung pro Periode berechnen
                 underutilized_count = 0
                 for t in model.T:
+                    # Summe der Nachfrage über alle Kunden für die jeweilige Periode
                     total_demand = sum(
                         pyo.value(model.d[j, t]) for j in supplied_customers
                     )
@@ -367,6 +370,7 @@ def _(pd, pyo):
                         underutilized_count += 1
 
                 underutilized_flag = underutilized_count > len(model.T) / 2
+                average_demand = total_demand_per_apl / len(model.T) if len(model.T) > 0 else 0
 
                 results.append({
                     "APL_ID": i,
@@ -374,7 +378,8 @@ def _(pd, pyo):
                     "Total_APLs_Opened": prev_y,
                     "Total_Setup_Costs": total_setup_costs,
                     "Supplied_Customers": ",".join(sorted(supplied_customers)),
-                    "Underutilized_Most_Periods": underutilized_flag
+                    "Underutilized_Most_Periods": underutilized_flag,
+                    "Average_Demand": average_demand
                 })
 
         df = pd.DataFrame(results)
@@ -390,6 +395,7 @@ def _(extract_cflp_results, model):
     df_apl_summary = extract_cflp_results(model)
     df_apl_summary
     print(f"Sum of opened APLs: {df_apl_summary['Total_APLs_Opened'].sum()}")
+    print(df_apl_summary["Average_Demand"])
     return
 
 

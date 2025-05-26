@@ -84,7 +84,13 @@ def _(gpd, requests):
 
     # OSRM erwartet Koordinaten als LON,LAT → joinen mit ;
     coord_string = ";".join([f"{lon},{lat}" for lon, lat in apl_coords])
-    return apl_ids, coord_string
+    return apl_ids, coord_string, hub_coord_snapped
+
+
+@app.cell
+def _(hub_coord_snapped):
+    print(hub_coord_snapped)
+    return
 
 
 @app.cell
