@@ -20,7 +20,7 @@ def _():
     import branca.colormap as cm
     import pysd
     import numpy as np
-    return alt, cm, folium, gpd, json, mo, np, pd, pysd, requests
+    return Fullscreen, alt, cm, folium, gpd, json, mo, np, pd, pysd, requests
 
 
 @app.cell
@@ -39,7 +39,15 @@ def _(gpd, pd):
     cust_gdf = cust_gdf.rename(columns={'Gitter_ID_100m': 'Customer_ID', 'geometry': 'Customer_geometry'})
     results_df = results_df.merge(apl_gdf[['APL_ID', 'APL_geometry']], on='APL_ID', how='left')
     results_df = results_df.merge(cust_gdf[['Customer_ID', 'Customer_geometry']], on='Customer_ID', how='left')
-    return potential_locations_gdf, results_df, wuerzburg_gdf
+
+    summary_df = pd.read_csv("./Data/cflp_apl_deployment_summary.csv", sep=";")
+    return potential_locations_gdf, results_df, summary_df, wuerzburg_gdf
+
+
+@app.cell
+def _(wuerzburg_gdf):
+    print(len(wuerzburg_gdf["Gitter_ID_100m"]))
+    return
 
 
 @app.cell
@@ -133,6 +141,7 @@ def _(mo):
 
 @app.cell
 def _(
+    Fullscreen,
     anzahl_slider,
     cm,
     folium,
@@ -146,7 +155,7 @@ def _(
     gewaehlte_packzellen = heuristic_APLs(wuerzburg_gdf, anzahl=anzahl)
 
     m = folium.Map(location=[49.7925, 9.9380], zoom_start=13, tiles='cartodbpositron')
-    #Fullscreen().add_to(m)
+    Fullscreen().add_to(m)
 
     # Population-GeoJSON
     colormap = cm.linear.YlOrRd_09.scale(0, 200)
@@ -166,21 +175,7 @@ def _(
     ).add_to(layer_100m)
     layer_100m.add_to(m)
 
-    layer_200m = folium.FeatureGroup(name='Population 200m-Grid', overlay=True, control=True, show=False)
-    folium.GeoJson(
-        './Data/wuerzburg_bevoelkerung_200m.geojson',
-        name='Population 200m-Grid',
-        style_function=lambda feature: {
-            'fillColor': colormap(feature['properties']['Einwohner']),
-            'color': 'black',
-            'weight': 0.3,
-            'fillOpacity': 0.7,
-        },
-        tooltip=folium.GeoJsonTooltip(fields=['Einwohner'], aliases=['Einwohner:']),
-    ).add_to(layer_200m)
-    #layer_200m.add_to(m)
-
-    colormap.add_to(m)
+    # colormap.add_to(m)
 
     # DHL Layer
     dhl_layer = folium.FeatureGroup(name='DHL Parcel Lockers', show=False)
@@ -230,20 +225,20 @@ def _(
             """
         )
     ], gap=2)
-    return (layer_100m,)
+    return colormap, dhl_layer, layer_100m
 
 
 @app.cell
 def _():
     constant_variables = ["Population", "Population growth rate", '"E-shopper share"', ''"E-shoppers growth rate"'', "Online purchase growth rate", "APL market growth rate", '"Avg. parcels per APL per month"']
 
-    dynamic_variables = ["Market Size", '"Potential e-customers"', "APL users", "Purchases per month", "Number of deliveries", "Number of APLs"]
+    dynamic_variables = ["Market Size", '"Potential e-customers"', "APL users", "Online purchases per month", "Number of deliveries", "Number of APLs"]
     return (dynamic_variables,)
 
 
 @app.cell
 def _(pysd):
-    sd_model = pysd.read_vensim("./Vensim-Model/APL-SFD-Würzburg-V1.mdl")
+    sd_model = pysd.read_vensim("./Vensim-Model/APL-SFD-Würzburg-V2.mdl")
     model_overview = sd_model.doc
     #print(model_overview)
     simulation_results = sd_model.run().reset_index()
@@ -299,8 +294,8 @@ def _(
             #System Dynamics Model  
             In the next step, I adapted the Stocks and Flows Diagram by Rabe et al. to Würzburg to simulate the demand for APLs over the next 10 years.
             """),
-        mo.image(src="./Vensim-Model/APL-SFD-Würzburg-V1.png",
-                width=600, style={"margin-right": "auto", "margin-left": "auto"}),
+        mo.image(src="./Vensim-Model/APL-SFD-Würzburg-V2.png",
+                width=450, style={"margin-right": "auto", "margin-left": "auto"}),
         mo.md("##Simulation results"),
         mo.hstack([
             market_size_chart,
@@ -388,35 +383,66 @@ def _(interactive_chart, mo, scenario_selection):
 
 
 @app.cell
-def _(folium, layer_100m, mo, potential_locations_gdf, results_df):
+def _(
+    Fullscreen,
+    colormap,
+    dhl_layer,
+    folium,
+    layer_100m,
+    mo,
+    potential_locations_gdf,
+    results_df,
+    summary_df,
+):
     m1 = folium.Map(location=[49.7925, 9.9380], zoom_start=13, tiles='cartodbpositron')
     layer_100m.add_to(m1)
+    dhl_layer.add_to(m1)
+    Fullscreen().add_to(m1)
+
+    # 300m layer
+    layer_300m = folium.FeatureGroup(name='Population 300m-Grid', overlay=True, control=True, show=False)
+    folium.GeoJson(
+        './Data/wuerzburg_bevoelkerung_300m.geojson',
+        name='Population 300m-Grid',
+        style_function=lambda feature: {
+            'fillColor': colormap(feature['properties']['Einwohner']),
+            'color': 'black',
+            'weight': 0.3,
+            'fillOpacity': 0.7,
+        },
+        tooltip=folium.GeoJsonTooltip(fields=['Einwohner'], aliases=['Einwohner:']),
+    ).add_to(layer_300m)
+    layer_300m.add_to(m1)
 
     # Potential Locations Layer
     cluster_layer = folium.FeatureGroup(name='Potential APL Locations (Population Clusters)', show=True)
     apl_centroids = potential_locations_gdf.copy()
     apl_centroids["geometry"] = apl_centroids["geometry"].centroid
 
-    for pt in apl_centroids.geometry:
-        lat1, lon1 = pt.y, pt.x 
-        folium.CircleMarker(location=(lat1, lon1),
-                            radius=4,
-                            color="blue",
-                            fill=True,
-                            fill_opacity=0.8).add_to(cluster_layer)
+    for idx, pt in apl_centroids.iterrows():
+        lat1, lon1 = pt['geometry'].y, pt['geometry'].x
+        folium.CircleMarker(
+            location=(lat1, lon1),
+            popup=f"APL-ID:{pt['Gitter_ID_100m']}",
+            radius=4,
+            color="blue",
+            fill=True,
+            fill_opacity=0.8
+        ).add_to(cluster_layer)
 
     cluster_layer.add_to(m1)
 
-    #Underperformer
-    apls_low_utilization = ['100mN29600E43224', '100mN29621E43137']
-    highlighted_apls = apl_centroids[apl_centroids["Gitter_ID_100m"].isin(apls_low_utilization)]
+    # Underperformer
+    underutilized_apls = summary_df[summary_df["Underutilized_Most_Periods"] == True]["APL_ID"].tolist()
+    highlighted_apls = apl_centroids[apl_centroids["Gitter_ID_100m"].isin(underutilized_apls)]
+
     low_utilization_layer = folium.FeatureGroup(name="Low capacity utilization APLs", show=False)
 
     for _, apl in highlighted_apls.iterrows():
         folium.Marker(
             location=[apl['geometry'].y, apl['geometry'].x],
-            popup= "<= 20% capacity utilization in all periods",
-            icon=folium.Icon(color='red', icon='info-sign')  # Rote Farbe zur Hervorhebung
+            popup="Underutilized in >50% of periods",
+            icon=folium.Icon(color='red', icon='info-sign')
         ).add_to(low_utilization_layer)
 
     low_utilization_layer.add_to(m1)
@@ -456,12 +482,13 @@ def _(folium, layer_100m, mo, potential_locations_gdf, results_df):
 
     mo.vstack([
         mo.md(
-            r"""
+            f"""
             # Optimization
 
             In the next step, I modeled the problem as a Capacitated **Facility Location Problem (CFLP)**. The initial dataset consists of 100-meter grid cells across the city of Würzburg, each representing a potential facility site or demand point. However, including all grid cells as possible facility locations would result in an intractably large number of decision variables.  
-            To address this issue, I used clustering techniques to reduce the candidate locations to **50 population-based clusters**, which serve as aggregated potential APL sites. For the demand sites, I started of with a **300-meter grid**. The resulting optimization model is implemented in Pyomo and solved using the CPLEX solver.  
+            To address this issue, I used clustering techniques to reduce the candidate locations to **60 population-based clusters**, which serve as aggregated potential APL sites. For the demand sites, I started of with a **300-meter grid**. The resulting optimization model is implemented in Pyomo and solved using the CPLEX solver.  
             I solve the problem over ten periods (first month of ten consecutive years).
+            In total, **{summary_df['Total_APLs_Opened'].sum()} APLs** are deployed.
             """
         ),
         m1

@@ -19,7 +19,7 @@ def _():
 
 @app.cell
 def _(Point, gpd):
-    wuerzburg_center_wgs84 = gpd.GeoSeries([Point(9.9534, 49.7913)], crs='EPSG:4326')
+    wuerzburg_center_wgs84 = gpd.GeoSeries([Point(9.9534, 49.7880)], crs='EPSG:4326')
     wuerzburg_center_3035 = wuerzburg_center_wgs84.to_crs('EPSG:3035')
     print(wuerzburg_center_3035)
     return
@@ -49,7 +49,7 @@ def _(Point, Polygon, gpd, pd):
 
     # Bounding Box automatisch um Würzburg-Mitte
     wuerzburg_center = Point(4317644.055, 2964301.536)
-    buffer = 5000  # Radius in Metern
+    buffer = 4500  # Radius in Metern
     wuerzburg_bbox = wuerzburg_center.buffer(buffer).envelope
     wuerzburg_gdf = gpd.GeoDataFrame(geometry=[wuerzburg_bbox], crs='EPSG:3035')
 
@@ -190,13 +190,70 @@ def _(mo):
 
 
 @app.cell
+def _():
+    # # Gitterzellen-Zentren extrahieren
+    # coords = np.array([[geom.centroid.x, geom.centroid.y] for geom in wuerzburg_poly_gdf.geometry])
+
+    # # KMeans über die Gitterzellen-Zentren
+    # n_clusters=60
+    # kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(coords, sample_weight=wuerzburg_poly_gdf["Einwohner"])
+    # wuerzburg_poly_gdf["cluster"] = kmeans.labels_
+
+    # # Für jeden Cluster: finde die Zelle, die dem Zentrum am nächsten liegt
+    # cluster_centers = kmeans.cluster_centers_
+    # apl_geoms = []
+    # apl_records = []
+
+    # for cluster_id in range(n_clusters):
+    #     cluster_cells = wuerzburg_poly_gdf[wuerzburg_poly_gdf["cluster"] == cluster_id]
+    #     cell_coords = np.array([[geom.centroid.x, geom.centroid.y] for geom in cluster_cells.geometry])
+
+    #     # Index der Zelle, die dem Zentrum am nächsten ist
+    #     nearest_idx = np.argmin(np.linalg.norm(cell_coords - cluster_centers[cluster_id], axis=1))
+    #     nearest_cell = cluster_cells.iloc[nearest_idx]
+
+    #     apl_geoms.append(nearest_cell.geometry)
+    #     apl_records.append({
+    #         "Gitter_ID_100m": nearest_cell["Gitter_ID_100m"],
+    #         "x_mp_100m": nearest_cell["x_mp_100m"],
+    #         "y_mp_100m": nearest_cell["y_mp_100m"],
+    #         "Einwohner": nearest_cell["Einwohner"],
+    #         "cluster": cluster_id
+    #     })
+
+    # # 4. GeoDataFrame nur mit Zentrumspunkten (z. B. für Pyomo `I`)
+    # apl_candidates_gdf = gpd.GeoDataFrame(apl_records, geometry=apl_geoms, crs=wuerzburg_poly_gdf.crs)
+
+    # apl_candidates_gdf.to_file("./Data/apl_candidates_clusters.geojson", driver="GeoJSON")
+    # print("Daten erfolgreich vorverarbeitet und als GeoJSON gespeichert.")
+    return
+
+
+@app.cell
 def _(KMeans, gpd, np, wuerzburg_poly_gdf):
     # Gitterzellen-Zentren extrahieren
     coords = np.array([[geom.centroid.x, geom.centroid.y] for geom in wuerzburg_poly_gdf.geometry])
 
-    # KMeans über die Gitterzellen-Zentren
-    n_clusters=50
-    kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(coords, sample_weight=wuerzburg_poly_gdf["Einwohner"])
+    # Zentrum der Stadt berechnen (geometrisches Mittel aller Koordinaten)
+    center = np.mean(coords, axis=0)
+
+    # Entfernungen zum Zentrum berechnen
+    distances = np.linalg.norm(coords - center, axis=1)
+
+    # Gewichte basierend auf Entfernung zum Zentrum (näher = höheres Gewicht)
+    distance_weights = 1 / (distances + 1)  # +1 verhindert Division durch 0
+
+    # Kombiniere Einwohner-Gewichte mit Entfernungs-Gewichten
+    # Option 1: Multiplikation (bevorzugt zentrale UND bevölkerungsreiche Gebiete)
+    combined_weights = wuerzburg_poly_gdf["Einwohner"] * distance_weights
+
+    # Option 2: Gewichtete Summe (flexibler)
+    # alpha = 0.7  # Gewichtung: 70% Einwohner, 30% Zentrum
+    # combined_weights = alpha * wuerzburg_poly_gdf["Einwohner"] + (1-alpha) * distance_weights * np.max(wuerzburg_poly_gdf["Einwohner"])
+
+    # KMeans mit kombinierten Gewichten
+    n_clusters = 60
+    kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(coords, sample_weight=combined_weights)
     wuerzburg_poly_gdf["cluster"] = kmeans.labels_
 
     # Für jeden Cluster: finde die Zelle, die dem Zentrum am nächsten liegt
@@ -207,25 +264,33 @@ def _(KMeans, gpd, np, wuerzburg_poly_gdf):
     for cluster_id in range(n_clusters):
         cluster_cells = wuerzburg_poly_gdf[wuerzburg_poly_gdf["cluster"] == cluster_id]
         cell_coords = np.array([[geom.centroid.x, geom.centroid.y] for geom in cluster_cells.geometry])
-
+    
         # Index der Zelle, die dem Zentrum am nächsten ist
         nearest_idx = np.argmin(np.linalg.norm(cell_coords - cluster_centers[cluster_id], axis=1))
         nearest_cell = cluster_cells.iloc[nearest_idx]
-
+    
+        # Korrekte Indizes für die Gewichte verwenden
+        original_idx = cluster_cells.iloc[nearest_idx].name  # Original DataFrame Index
+        array_idx = wuerzburg_poly_gdf.index.get_loc(original_idx)  # Position im Array
+    
         apl_geoms.append(nearest_cell.geometry)
         apl_records.append({
             "Gitter_ID_100m": nearest_cell["Gitter_ID_100m"],
             "x_mp_100m": nearest_cell["x_mp_100m"],
             "y_mp_100m": nearest_cell["y_mp_100m"],
             "Einwohner": nearest_cell["Einwohner"],
+            # "distance_weight": distance_weights[array_idx],
+            # "combined_weight": combined_weights[array_idx],
             "cluster": cluster_id
         })
 
-    # 4. GeoDataFrame nur mit Zentrumspunkten (z. B. für Pyomo `I`)
+    # GeoDataFrame nur mit Zentrumspunkten
     apl_candidates_gdf = gpd.GeoDataFrame(apl_records, geometry=apl_geoms, crs=wuerzburg_poly_gdf.crs)
-
     apl_candidates_gdf.to_file("./Data/apl_candidates_clusters.geojson", driver="GeoJSON")
+
     print("Daten erfolgreich vorverarbeitet und als GeoJSON gespeichert.")
+    print(f"Zentrum der Stadt: {center}")
+    print(f"Durchschnittliche Entfernung zum Zentrum: {np.mean(distances):.0f}m")
     return
 
 

@@ -22,7 +22,7 @@ def _(gpd, pd):
     #Results from heuristic approach
     heuristic_results_df = pd.read_csv("./Data/heuristic_results.csv", sep=";")
     # Demand from Vensim simulation
-    demand_df = pd.read_csv("./Data/results-sim2.csv", sep=";")
+    demand_df = pd.read_csv("./Data/results-model2-sim1.csv", sep=";")
     demand_df_filtered = demand_df.iloc[[1, 13, 25, 37, 49]]
     # 300m-grid population data
     wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
@@ -37,7 +37,7 @@ def _(gpd, pd):
 @app.cell
 def _(demand_df_filtered, wuerzburg_gdf_300m):
     # Demand share per cell
-    total_demand_per_period = demand_df_filtered["Number of deliveries : S2"].values
+    total_demand_per_period = demand_df_filtered["Number of deliveries : Model-V2-S1"].values
     total_population = wuerzburg_gdf_300m["Einwohner"].sum()
     wuerzburg_gdf_300m["demand_share"] = wuerzburg_gdf_300m["Einwohner"] / total_population
     return (total_demand_per_period,)
@@ -149,6 +149,21 @@ def _(defaultdict, np):
 
 
 @app.cell
+def _(result_summary, result_summary_heuristic):
+    def print_summary(summary):
+        print("Simulation results:")
+        print(f"  Mean reliability: {summary['mean_reliability']:.4f}")
+        print(f"  Success rate (>{summary['threshold']:.2f} reliability): {summary['success_rate']:.4f}")
+        print(f"  Number of simulations: {summary['runs']}")
+
+    print("Optimization model:")
+    print_summary(result_summary)
+    print("\nHeuristic:")
+    print_summary(result_summary_heuristic)
+    return
+
+
+@app.cell
 def _(demand_jt_df, results_df, run_monte_carlo_simulation):
     result_summary, reliability_runs = run_monte_carlo_simulation(
         demand_jt_df=demand_jt_df,
@@ -159,9 +174,8 @@ def _(demand_jt_df, results_df, run_monte_carlo_simulation):
         random_seed=42
     )
 
-    print(result_summary)
-
-    return
+    #print(result_summary)
+    return (result_summary,)
 
 
 @app.cell
@@ -176,7 +190,7 @@ def _(demand_jt_df, heuristic_results_df, run_monte_carlo_simulation):
     )
 
     print(result_summary_heuristic)
-    return
+    return (result_summary_heuristic,)
 
 
 if __name__ == "__main__":

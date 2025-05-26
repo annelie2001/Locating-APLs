@@ -1,6 +1,8 @@
+
+
 import marimo
 
-__generated_with = "0.11.22"
+__generated_with = "0.13.2"
 app = marimo.App(width="medium")
 
 
@@ -10,19 +12,19 @@ def _():
     import numpy as np
     import marimo as mo
     import altair as alt
-    return alt, mo, np, pd
+    return alt, np, pd
 
 
 @app.cell
 def _(pd):
     # Daten einlesen
-    df = pd.read_csv("./Data/results-sim2.csv", sep=";")
+    df = pd.read_csv("./Data/results-model2-sim1.csv", sep=";")
     return (df,)
 
 
 @app.cell
 def _(df):
-    demand_series = df["Number of deliveries : S2"].values  # Länge: 120 Monate
+    demand_series = df["Number of deliveries : Model-V2-S1"].values  # Länge: 120 Monate
     print(demand_series[:12])
     return (demand_series,)
 
@@ -54,19 +56,7 @@ def _(demand_series, np, pd):
     # 8. Speichern
     scenario_df.to_csv("./Data/generated_scenarios.csv", sep=";", decimal='.', index=False)
     print("Szenarien generiert und in 'generated_scenarios.csv' gespeichert.")
-    return (
-        delta,
-        factor,
-        mu,
-        num_months,
-        num_scenarios,
-        s_idx,
-        scenario_df,
-        scenario_factors,
-        scenarios,
-        sigma,
-        t,
-    )
+    return delta, num_months
 
 
 @app.cell
@@ -89,7 +79,7 @@ def _(alt, delta, np, num_months, pd):
     )
 
     chart
-    return chart, damped_delta_values, data, t_values
+    return
 
 
 if __name__ == "__main__":
