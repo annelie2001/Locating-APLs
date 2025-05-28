@@ -45,12 +45,6 @@ def _(gpd, pd):
 
 
 @app.cell
-def _(wuerzburg_gdf):
-    print(len(wuerzburg_gdf["Gitter_ID_100m"]))
-    return
-
-
-@app.cell
 def _(json, requests):
     # DHL-Daten Würzburg
     latitude = 49.7913
@@ -225,7 +219,7 @@ def _(
             """
         )
     ], gap=2)
-    return colormap, dhl_layer, layer_100m
+    return colormap, dhl_layer
 
 
 @app.cell
@@ -388,19 +382,19 @@ def _(
     colormap,
     dhl_layer,
     folium,
-    layer_100m,
     mo,
     potential_locations_gdf,
     results_df,
     summary_df,
 ):
     m1 = folium.Map(location=[49.7925, 9.9380], zoom_start=13, tiles='cartodbpositron')
-    layer_100m.add_to(m1)
-    dhl_layer.add_to(m1)
     Fullscreen().add_to(m1)
 
+    # layer_100m.add_to(m1)
+    dhl_layer.add_to(m1)
+
     # 300m layer
-    layer_300m = folium.FeatureGroup(name='Population 300m-Grid', overlay=True, control=True, show=False)
+    layer_300m = folium.FeatureGroup(name='Population 300m-Grid', overlay=True, control=True, show=True)
     folium.GeoJson(
         './Data/wuerzburg_bevoelkerung_300m.geojson',
         name='Population 300m-Grid',
@@ -432,6 +426,24 @@ def _(
 
     cluster_layer.add_to(m1)
 
+    # Deployed APLs Layer
+    selected_apls = summary_df["APL_ID"].tolist()
+    deployed_apls = apl_centroids[apl_centroids["Gitter_ID_100m"].isin(selected_apls)]
+
+    selected_layer = folium.FeatureGroup(name="Deployed APLs", show=False)
+
+    for _, apl in deployed_apls.iterrows():
+        popup_text = f"APL {apl}"
+        folium.CircleMarker(
+            location=[apl['geometry'].y, apl['geometry'].x],
+            radius=4,
+            color="#7a92f2",
+            fill=True,
+            popup=popup_text
+        ).add_to(selected_layer)
+
+    selected_layer.add_to(m1)
+
     # Underperformer
     underutilized_apls = summary_df[summary_df["Underutilized_Most_Periods"] == True]["APL_ID"].tolist()
     highlighted_apls = apl_centroids[apl_centroids["Gitter_ID_100m"].isin(underutilized_apls)]
@@ -459,7 +471,7 @@ def _(
             folium.CircleMarker(
                 location=[apl_point.y, apl_point.x],
                 radius=4,
-                color="#3182bd",
+                color="#7a92f2",
                 fill=True,
                 fill_opacity=0.8,
                 popup=popup_text
@@ -472,7 +484,7 @@ def _(
                 folium.PolyLine(
                     locations=[[apl_centroid.y, apl_centroid.x],
                                [cust_centroid.y, cust_centroid.x]],
-                    color="#3182bd",
+                    color="#7a92f2",
                     weight=1
                 ).add_to(group)
 
