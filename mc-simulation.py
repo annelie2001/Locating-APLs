@@ -23,15 +23,10 @@ def _(gpd, pd):
     heuristic_results_df = pd.read_csv("./Data/heuristic_results.csv", sep=";")
     # Demand from Vensim simulation
     demand_df = pd.read_csv("./Data/results-model2-sim1.csv", sep=";")
-    demand_df_filtered = demand_df.iloc[[1, 13, 25, 37, 49]]
+    demand_df_filtered = demand_df.iloc[[1, 13, 25, 37, 49, 61, 73, 85, 97, 109]]
     # 300m-grid population data
     wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
-    return (
-        demand_df_filtered,
-        heuristic_results_df,
-        results_df,
-        wuerzburg_gdf_300m,
-    )
+    return demand_df_filtered, results_df, wuerzburg_gdf_300m
 
 
 @app.cell
@@ -47,7 +42,7 @@ def _(demand_df_filtered, wuerzburg_gdf_300m):
 def _(pd, total_demand_per_period, wuerzburg_gdf_300m):
     # Demand per cell and period 
 
-    periods = [0, 1, 2, 3, 4]
+    periods = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     demand_list = []
 
     for t in periods:
@@ -110,7 +105,6 @@ def _(defaultdict, np):
             apl_demand = defaultdict(float)
 
             for (t, apl), customers in assignment_map.items():
-                # print(f"  ⏳ Bearbeite Periode {t}/{len(periods)}...")
                 for j in customers:
                     demand_val = demand_samples[
                         (demand_samples["j"] == j) & (demand_samples["t"] == t)
@@ -149,21 +143,6 @@ def _(defaultdict, np):
 
 
 @app.cell
-def _(result_summary, result_summary_heuristic):
-    def print_summary(summary):
-        print("Simulation results:")
-        print(f"  Mean reliability: {summary['mean_reliability']:.4f}")
-        print(f"  Success rate (>{summary['threshold']:.2f} reliability): {summary['success_rate']:.4f}")
-        print(f"  Number of simulations: {summary['runs']}")
-
-    print("Optimization model:")
-    print_summary(result_summary)
-    print("\nHeuristic:")
-    print_summary(result_summary_heuristic)
-    return
-
-
-@app.cell
 def _(demand_jt_df, results_df, run_monte_carlo_simulation):
     result_summary, reliability_runs = run_monte_carlo_simulation(
         demand_jt_df=demand_jt_df,
@@ -173,24 +152,35 @@ def _(demand_jt_df, results_df, run_monte_carlo_simulation):
         reliability_threshold=0.95,
         random_seed=42
     )
-
-    #print(result_summary)
     return (result_summary,)
 
 
 @app.cell
-def _(demand_jt_df, heuristic_results_df, run_monte_carlo_simulation):
-    result_summary_heuristic, reliability_runs_heuristic = run_monte_carlo_simulation(
-        demand_jt_df=demand_jt_df,
-        results_df=heuristic_results_df,
-        apl_capacity=4000,
-        num_runs=50,
-        reliability_threshold=0.95,
-        random_seed=42
-    )
+def _():
+    # result_summary_heuristic, reliability_runs_heuristic = run_monte_carlo_simulation(
+    #     demand_jt_df=demand_jt_df,
+    #     results_df=heuristic_results_df,
+    #     apl_capacity=4000,
+    #     num_runs=50,
+    #     reliability_threshold=0.95,
+    #     random_seed=42
+    # )
+    return
 
-    print(result_summary_heuristic)
-    return (result_summary_heuristic,)
+
+@app.cell
+def _(result_summary):
+    def print_summary(summary):
+        print("Simulation results:")
+        print(f"  Mean reliability: {summary['mean_reliability']:.4f}")
+        print(f"  Success rate (>{summary['threshold']:.2f} reliability): {summary['success_rate']:.4f}")
+        print(f"  Number of simulations: {summary['runs']}")
+
+    print("Optimization model:")
+    print_summary(result_summary)
+    # print("\nHeuristic:")
+    # print_summary(result_summary_heuristic)
+    return
 
 
 if __name__ == "__main__":

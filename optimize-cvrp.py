@@ -26,7 +26,6 @@ def _(pd):
 
     # Bedarfe laden und nur aktive APLs behalten
     df_apl = pd.read_csv("./Data/cflp_apl_deployment_summary.csv", sep=";")
-
     return df_apl, df_dist, hub_id
 
 
@@ -56,6 +55,7 @@ def _(
     )
     distance_matrix = new_distance_matrix.values.astype(int)
     return (
+        apl_ids,
         daily_demand,
         depot_index,
         distance_matrix,
@@ -320,12 +320,14 @@ def _(pywrapcp, routing, routing_enums_pb2):
 
 
 @app.cell
-def _(data, manager, routing, solution):
+def _(apl_ids, data, manager, pd, routing, solution):
     # === Ergebnisse auslesen ===
-    def print_solution(data, manager, routing, solution):
+    def get_routes(data, manager, routing, solution):
+        routes = []
         total_distance = 0
         total_load = 0
         for vehicle_id in range(data['num_vehicles']):
+            route = []
             index = routing.Start(vehicle_id)
             route_distance = 0
             route_load = 0
@@ -333,22 +335,44 @@ def _(data, manager, routing, solution):
             while not routing.IsEnd(index):
                 node_index = manager.IndexToNode(index)
                 route_load += data['demands'][node_index]
-                plan_output += f' {node_index} (load: {route_load}) ->'
+                # route.append(node_index)
+                if node_index == 0:
+                    route.append("Hub")  # Knoten 0 ist der Hub
+                    plan_output += " Hub ->"
+                else:
+                    route.append(apl_ids[node_index - 1])  # APL_ID für andere Knoten
+                    plan_output += f' {apl_ids[node_index - 1]} (load: {route_load}) ->'
                 previous_index = index
                 index = solution.Value(routing.NextVar(index))
                 route_distance += routing.GetArcCostForVehicle(previous_index, index, vehicle_id)
-            plan_output += f' {manager.IndexToNode(index)}\n'
+            node_index = manager.IndexToNode(index)
+            # route.append(node_index)
+            if node_index == 0:
+                route.append("Hub")  # Knoten 0 ist der Hub
+            else:
+                route.append(apl_ids[node_index - 1])  # APL_ID für andere Knoten
+            routes.append(route)
+            plan_output += " Hub \n"
             plan_output += f'Distance: {route_distance}m, Load: {route_load}\n'
             print(plan_output)
             total_distance += route_distance
             total_load += route_load
         print(f'Total distance of all routes: {total_distance}m')
         print(f'Total load delivered: {total_load}')
+        return routes
 
     if solution:
-        print_solution(data, manager, routing, solution)
+        routes = get_routes(data, manager, routing, solution)
     else:
         print("Keine Lösung gefunden.")
+
+    # Save routes
+
+    max_len = max(len(route) for route in routes)
+    padded_routes = [route + [''] * (max_len - len(route)) for route in routes]
+    df_routes = pd.DataFrame(padded_routes)
+    df_routes = df_routes.T
+    df_routes.to_csv('./Data/routes.csv', index=False, header=False, sep=";")
 
     return
 
