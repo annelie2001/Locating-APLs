@@ -49,11 +49,13 @@ def _(gpd, pd):
 
     # Global parameters
     max_service_distance = 1700  # Max walking distance in meters
+    scenario=10
     return (
         apl_cells,
         df_walking,
         grid_cells_300m,
         max_service_distance,
+        scenario,
         scenarios_df_filtered,
         time_periods,
         total_population,
@@ -68,7 +70,15 @@ def _(mo):
 
 
 @app.cell
-def _(scenarios_df_filtered, time_periods, total_population):
+def _(
+    scenario,
+    scenarios_df_filtered,
+    time_periods,
+    total_population,
+    wuerzburg_gdf_300m_projected,
+):
+    # Demand per cell in specific scenario
+
     def calculate_demand_per_cell(gdf, scenario):
         demand = {}
         for t in time_periods:
@@ -77,17 +87,15 @@ def _(scenarios_df_filtered, time_periods, total_population):
                 cell_population = row["Einwohner"]
                 demand[j, t] = (cell_population / total_population) * scenarios_df_filtered.iloc[t-1, scenario]
         return demand
-    return (calculate_demand_per_cell,)
 
-
-@app.cell
-def _(calculate_demand_per_cell, wuerzburg_gdf_300m_projected):
-    demand_scenario = calculate_demand_per_cell(wuerzburg_gdf_300m_projected, 10)
+    demand_scenario = calculate_demand_per_cell(wuerzburg_gdf_300m_projected, scenario=scenario)
     return (demand_scenario,)
 
 
 @app.cell
 def _(df_walking, max_service_distance):
+    # Calculate distances and determine valid pairs within max walking distance
+
     distances = {}
     valid_pairs = []
     no_connection = []
@@ -106,10 +114,8 @@ def _(df_walking, max_service_distance):
         if not has_connection:
             no_connection.append(customer_id)
 
-    print(f"Anzahl gültiger Paare: {len(valid_pairs)}")
-    print(f"Anzahl Gitterzellen ohne Verbindung: {len(no_connection)}")
-    print(f"Gitterzellen ohne Verbindung: {no_connection}")
-    print(f"Anzahl Distanzen: {len(distances)}")
+    print(f"Number of valid pairs: {len(valid_pairs)}")
+    print(f"Number of grid cells without valid connection: {len(no_connection)}")
     return distances, valid_pairs
 
 
@@ -134,9 +140,9 @@ def _(
     model.ValidConnections = pyo.Set(initialize=valid_pairs, dimen=2)
 
     # Sets
-    model.I = pyo.Set(initialize=apl_cells)   # APL-Standorte (IDs oder Indizes)
-    model.J = pyo.Set(initialize=grid_cells_300m)  # Kundenstandorte
-    model.T = pyo.Set(initialize=time_periods)  # Zeithorizont
+    model.I = pyo.Set(initialize=apl_cells)   # APL nodes
+    model.J = pyo.Set(initialize=grid_cells_300m)  # Customer nodes
+    model.T = pyo.Set(initialize=time_periods)  # Time horizon
 
     # Parameter
     model.c = pyo.Param(model.I, model.J, initialize=distances, within=pyo.NonNegativeReals)
@@ -147,8 +153,8 @@ def _(
         within=pyo.NonNegativeReals
     )
     model.d = pyo.Param(model.J, model.T, initialize=demand_scenario, within=pyo.NonNegativeReals)
-    model.a = pyo.Param(initialize=4000)  # 4000 Pakete/Monat
-    model.m = pyo.Param(initialize=0)   # minimum usage
+    model.a = pyo.Param(initialize=4000)  # 4000 deliveries/month
+    model.m = pyo.Param(initialize=0)   # minimum utilization
 
     # Decision Variables
     model.x = pyo.Var(model.ValidConnections, model.T, domain=pyo.Binary)
@@ -168,7 +174,7 @@ def _(model, pyo):
         setup_costs = sum(m.f[i, t] * (m.y[i, t] - (0 if t == 1 else m.y[i, t-1])) 
                           for i in m.I for t in m.T)
 
-        return (setup_costs + customer_distances)
+        return (setup_costs + 0*customer_distances)
 
     model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
@@ -216,22 +222,17 @@ def _(mo):
 
 
 @app.cell
-def _(model, pyo):
-    #solver = pyo.SolverFactory('glpk')
+def _(model, pd, pyo, value):
     solver = pyo.SolverFactory('cplex')
 
     results = solver.solve(model, tee=True)
-    results.write()
+    # results.write()
 
     if results.solver.termination_condition == pyo.TerminationCondition.optimal:
         print("Optimal solution found.")
     else:
         print("Solver did not find an optimal solution. Termination condition:", results.solver.termination_condition)
-    return
 
-
-@app.cell
-def _(model, pd, value):
     # 1. Extrahiere x-Variablen (Zuweisungen)
     x_data = []
     for (i, j, t) in model.x:
@@ -263,10 +264,10 @@ def _(model, pd, value):
 
     # 6. Export als CSV
     df_combined.to_csv("./Data/combined_results_with_setup_costs.csv", index=False, sep=";")
-    print("Datei 'combined_results_with_setup_costs.csv' erfolgreich gespeichert.")
+    print("Results saved to 'combined_results_with_setup_costs.csv'.")
     df_combined
     print("Objective value:", value(model.objective))
-    print(df_combined["Demand"].mean())
+    print(f'Average demand: {df_combined["Demand"].mean()}')
     return
 
 
@@ -324,7 +325,7 @@ def _(pd, pyo):
 
         df = pd.DataFrame(results)
         df.to_csv(output_path, sep=";", index=False)
-        print(f"✅ Ergebnisse gespeichert unter: {output_path}")
+        print(f"✅ Results saved to: {output_path}")
         return df
 
     return (extract_cflp_results,)

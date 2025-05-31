@@ -42,7 +42,7 @@ def _(
     # noch durch gesnappte Koordinaten austauschen, bisher nicht gespeichert
 
     vehicle_capacity = 250
-    num_vehicles = 15  
+    num_vehicles = 15 
     depot_index = 0
 
     df_expanded, df_original = process_apl_data_with_splitting(df_apl=df_apl)
@@ -253,54 +253,6 @@ def _(
 
 
 @app.cell
-def _():
-    # def solve_progressively(routing, max_solutions=15, time_per_step=30):
-    #     """Erhöht solution_limit schrittweise"""
-    #     best_solution = None
-    #     best_objective = float('inf')
-
-    #     for limit in range(1, max_solutions + 1):
-    #         print(f"Versuche {limit} Lösungen...")
-
-    #         # Parameter kopieren und anpassen
-    #         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-    #         search_parameters.log_search = True
-    #         search_parameters.first_solution_strategy = (routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
-    #         search_parameters.local_search_metaheuristic = (routing_enums_pb2.LocalSearchMetaheuristic.AUTOMATIC)
-    #         search_parameters.solution_limit = limit
-    #         search_parameters.time_limit.seconds = time_per_step
-
-    #         # Wenn wir schon eine Lösung haben, als Startpunkt verwenden
-    #         if best_solution is not None:
-    #             # Hier könnten Sie die vorherige Lösung als Startpunkt setzen
-    #             pass
-
-    #         solution = routing.SolveWithParameters(search_parameters)
-
-    #         if solution is not None:
-    #             objective = solution.ObjectiveValue()
-    #             if objective < best_objective:
-    #                 best_solution = solution
-    #                 best_objective = objective
-    #                 print(f"Neue beste Lösung: {objective}")
-    #             else:
-    #                 print(f"Keine Verbesserung bei {limit} Lösungen")
-    #                 break  # Früh stoppen, wenn keine Verbesserung
-    #         else:
-    #             print(f"Keine Lösung bei limit {limit}")
-    #             break
-
-    #     return best_solution
-    return
-
-
-@app.cell
-def _():
-    # solution = solve_progressively(routing=routing)
-    return
-
-
-@app.cell
 def _(pywrapcp, routing, routing_enums_pb2):
     # Lösungsstrategie festlegen
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
@@ -320,7 +272,7 @@ def _(pywrapcp, routing, routing_enums_pb2):
 
 
 @app.cell
-def _(apl_ids, data, manager, pd, routing, solution):
+def _(apl_ids):
     # === Ergebnisse auslesen ===
     def get_routes(data, manager, routing, solution):
         routes = []
@@ -360,7 +312,11 @@ def _(apl_ids, data, manager, pd, routing, solution):
         print(f'Total distance of all routes: {total_distance}m')
         print(f'Total load delivered: {total_load}')
         return routes
+    return (get_routes,)
 
+
+@app.cell
+def _(data, get_routes, manager, pd, routing, solution):
     if solution:
         routes = get_routes(data, manager, routing, solution)
     else:
@@ -373,7 +329,6 @@ def _(apl_ids, data, manager, pd, routing, solution):
     df_routes = pd.DataFrame(padded_routes)
     df_routes = df_routes.T
     df_routes.to_csv('./Data/routes.csv', index=False, header=False, sep=";")
-
     return
 
 
