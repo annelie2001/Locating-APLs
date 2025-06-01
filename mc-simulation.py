@@ -12,7 +12,8 @@ def _():
     import pandas as pd
     import geopandas as gpd
     from collections import defaultdict
-    return defaultdict, gpd, np, pd
+    import pysd
+    return defaultdict, gpd, np, pd, pysd
 
 
 @app.cell
@@ -21,18 +22,23 @@ def _(gpd, pd):
     results_df = pd.read_csv("./Data/combined_results_with_setup_costs.csv", sep=";")
     #Results from heuristic approach
     heuristic_results_df = pd.read_csv("./Data/heuristic_results.csv", sep=";")
-    # Demand from Vensim simulation
-    demand_df = pd.read_csv("./Data/results-model2-sim1.csv", sep=";")
-    demand_df_filtered = demand_df.iloc[[1, 13, 25, 37, 49, 61, 73, 85, 97, 109]]
     # 300m-grid population data
     wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
-    return demand_df_filtered, results_df, wuerzburg_gdf_300m
+    return results_df, wuerzburg_gdf_300m
 
 
 @app.cell
-def _(demand_df_filtered, wuerzburg_gdf_300m):
+def _(pysd):
+    sd_model = pysd.read_vensim("./Vensim-Model/APL-SFD-Würzburg-V3.mdl")
+    simulation_results = sd_model.run().reset_index()
+    return (simulation_results,)
+
+
+@app.cell
+def _(simulation_results, wuerzburg_gdf_300m):
     # Demand share per cell
-    total_demand_per_period = demand_df_filtered["Number of deliveries : Model-V2-S1"].values
+    # total_demand_per_period = demand_df_filtered["Number of deliveries : Model-V2-S1"].values
+    total_demand_per_period = simulation_results["Number of deliveries"].values
     total_population = wuerzburg_gdf_300m["Einwohner"].sum()
     wuerzburg_gdf_300m["demand_share"] = wuerzburg_gdf_300m["Einwohner"] / total_population
     return (total_demand_per_period,)
@@ -147,7 +153,7 @@ def _(demand_jt_df, results_df, run_monte_carlo_simulation):
     result_summary, reliability_runs = run_monte_carlo_simulation(
         demand_jt_df=demand_jt_df,
         results_df=results_df,
-        apl_capacity=4000,
+        apl_capacity=48000,
         num_runs=100,
         reliability_threshold=0.95,
         random_seed=42
@@ -160,8 +166,8 @@ def _():
     # result_summary_heuristic, reliability_runs_heuristic = run_monte_carlo_simulation(
     #     demand_jt_df=demand_jt_df,
     #     results_df=heuristic_results_df,
-    #     apl_capacity=4000,
-    #     num_runs=50,
+    #     apl_capacity=48000,
+    #     num_runs=100,
     #     reliability_threshold=0.95,
     #     random_seed=42
     # )

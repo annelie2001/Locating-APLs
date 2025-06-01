@@ -48,7 +48,7 @@ def _(
     df_expanded, df_original = process_apl_data_with_splitting(df_apl=df_apl)
     apl_ids = df_expanded['APL_ID'].tolist()
     demands = [0] + df_expanded['Average_Demand'].astype(int).tolist()  # Hub + APLs
-    daily_demand = [int(d/30) for d in demands]
+    daily_demand = [int(d/12/30) for d in demands]
 
     new_distance_matrix, apl_mapping = expand_distance_matrix(
         df_expanded=df_expanded, df_dist=df_dist

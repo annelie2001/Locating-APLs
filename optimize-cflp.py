@@ -25,7 +25,6 @@ def _(gpd, pd):
 
     # Demand scenarios
     scenarios_df = pd.read_csv("./Data/generated_scenarios.csv", sep=";")
-    scenarios_df_filtered = scenarios_df.iloc[[1, 13, 25, 37, 49, 61, 73, 85, 97, 109]] #First month of each year, 10 years
     time_periods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] 
 
     # Population data Wuerzburg
@@ -56,7 +55,7 @@ def _(gpd, pd):
         grid_cells_300m,
         max_service_distance,
         scenario,
-        scenarios_df_filtered,
+        scenarios_df,
         time_periods,
         total_population,
         wuerzburg_gdf_300m_projected,
@@ -72,7 +71,7 @@ def _(mo):
 @app.cell
 def _(
     scenario,
-    scenarios_df_filtered,
+    scenarios_df,
     time_periods,
     total_population,
     wuerzburg_gdf_300m_projected,
@@ -85,7 +84,7 @@ def _(
             for _, row in gdf.iterrows():
                 j = row['Gitter_ID_100m']
                 cell_population = row["Einwohner"]
-                demand[j, t] = (cell_population / total_population) * scenarios_df_filtered.iloc[t-1, scenario]
+                demand[j, t] = (cell_population / total_population) * scenarios_df.iloc[t-1, scenario]
         return demand
 
     demand_scenario = calculate_demand_per_cell(wuerzburg_gdf_300m_projected, scenario=scenario)
@@ -153,7 +152,7 @@ def _(
         within=pyo.NonNegativeReals
     )
     model.d = pyo.Param(model.J, model.T, initialize=demand_scenario, within=pyo.NonNegativeReals)
-    model.a = pyo.Param(initialize=4000)  # 4000 deliveries/month
+    model.a = pyo.Param(initialize=48000)  # 48000 deliveries/year, 4000 deliveries/month
     model.m = pyo.Param(initialize=0)   # minimum utilization
 
     # Decision Variables
@@ -224,6 +223,9 @@ def _(mo):
 @app.cell
 def _(model, pd, pyo, value):
     solver = pyo.SolverFactory('cplex')
+    # Setze Abbruchkriterien
+    solver.options['timelimit'] = 600
+    # solver.options['mipgap'] = 0.0001
 
     results = solver.solve(model, tee=True)
     # results.write()

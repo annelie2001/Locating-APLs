@@ -12,20 +12,28 @@ def _():
     import numpy as np
     import marimo as mo
     import altair as alt
-    return alt, np, pd
+    import pysd
+    return np, pd, pysd
 
 
 @app.cell
 def _(pd):
     # Daten einlesen
     df = pd.read_csv("./Data/results-model2-sim1.csv", sep=";")
-    return (df,)
+    return
 
 
 @app.cell
-def _(df):
-    demand_series = df["Number of deliveries : Model-V2-S1"].values  # Länge: 120 Monate
-    print(demand_series[:12])
+def _(pysd):
+    sd_model = pysd.read_vensim("./Vensim-Model/APL-SFD-Würzburg-V3.mdl")
+    simulation_results = sd_model.run().reset_index()
+    simulation_results
+    return (simulation_results,)
+
+
+@app.cell
+def _(simulation_results):
+    demand_series = simulation_results["Number of deliveries"].values
     return (demand_series,)
 
 
@@ -33,20 +41,21 @@ def _(df):
 def _(demand_series, np, pd):
     # Szenario-Anzahl und Parameter
     num_scenarios = 20
-    num_months = 120
-    delta = 0.003
+    num_periods = 10
+    delta = 0.01
 
     # Faktoren zur Skalierung der Nachfrage je Szenario (linear von pessimistisch bis optimistisch)
     scenario_factors = np.linspace(0.9, 1.1, num_scenarios)  # z.B. 80% bis 120% des Basiswerts
 
     # 5. Matrix vorbereiten
-    scenarios = np.zeros((num_months, num_scenarios))
+    scenarios = np.zeros((num_periods, num_scenarios))
 
     # 6. Szenarien generieren
     for s_idx, factor in enumerate(scenario_factors):
-        for t in range(1, num_months + 1):  # t = 1...120
+        for t in range(1, num_periods + 1):
             mu = factor * demand_series[t - 1]  # Nachfrage angepasst durch Szenariofaktor
-            sigma = delta / np.log(t + 1) * t * mu  # Unsicherheit steigt mit der Zeit
+            # sigma = delta / np.log(t + 1) * t * mu   # Dämpfung
+            sigma = delta * t * mu  # Unsicherheit steigt mit der Zeit
             scenarios[t - 1, s_idx] = int(np.random.normal(loc=mu, scale=sigma))
 
     # 7. DataFrame mit Szenarien (jeder Reihe = ein Szenario)
@@ -56,29 +65,6 @@ def _(demand_series, np, pd):
     # 8. Speichern
     scenario_df.to_csv("./Data/generated_scenarios.csv", sep=";", decimal='.', index=False)
     print("Szenarien generiert und in 'generated_scenarios.csv' gespeichert.")
-    return delta, num_months
-
-
-@app.cell
-def _(alt, delta, np, num_months, pd):
-    # Erstelle eine Liste von t-Werten
-    t_values = np.arange(1, num_months + 1)
-
-    # Berechne die gedämpften Delta-Werte
-    damped_delta_values = delta / np.log(t_values + 1)
-
-    # Erstelle ein DataFrame
-    data = pd.DataFrame({'t': t_values, 'damped_delta': damped_delta_values})
-
-    # Erstelle den Altair-Plot
-    chart = alt.Chart(data).mark_line().encode(
-        x=alt.X('t', title='Zeit (Monate)'),
-        y=alt.Y('damped_delta', title='Gedämpftes Delta')
-    ).properties(
-        title='Logarithmische Dämpfung von Delta'
-    )
-
-    chart
     return
 
 
