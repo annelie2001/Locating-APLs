@@ -501,5 +501,51 @@ def _(
     return
 
 
+@app.cell
+def _(mo, pd):
+    evaluation_df = pd.read_csv("./Data/robustness-analysis.csv", sep=";")
+    mo.md("# Results")
+
+    duplicates = evaluation_df.duplicated(subset=["Combined costs", "Mean Reliability"], keep=False)
+    print("Anzahl der Duplikate:", duplicates.sum())
+    print(evaluation_df[duplicates])
+    return (evaluation_df,)
+
+
+@app.cell
+def _(alt, evaluation_df, mo):
+    # Selection for interactivity
+    selection = alt.selection_point(name="selected", fields=["Test Case"])
+
+    chart = alt.Chart(evaluation_df).mark_circle(size=100).encode(
+        x=alt.X("Combined costs:Q", title="Total Costs"),
+        y=alt.Y("Mean Reliability:Q", title="Reliability"),
+        detail="Test Case:N",
+        color=alt.condition(selection, alt.value("red"), alt.value("gray")),
+        tooltip=["Test Case:N", "Combined costs:Q", "Mean Reliability:Q"]
+    ).add_params(selection).properties(
+        width=600, height=400, title="Reliability vs Total Costs"
+    )
+    chart = mo.ui.altair_chart(chart)
+    chart
+
+    return (chart,)
+
+
+@app.cell
+def _(chart):
+    selected = chart.selections
+    return (selected,)
+
+
+@app.cell
+def _(evaluation_df, selected):
+    selected_cases = selected.get("selected", {}).get("Test Case", [])
+    print(selected_cases)
+    filtered_evaluation_df = evaluation_df[evaluation_df["Test Case"].isin(selected_cases)]
+    filtered_evaluation_df
+    return
+
+
 if __name__ == "__main__":
     app.run()

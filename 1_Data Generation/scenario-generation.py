@@ -17,13 +17,6 @@ def _():
 
 
 @app.cell
-def _(pd):
-    # Daten einlesen
-    df = pd.read_csv("./Data/results-model2-sim1.csv", sep=";")
-    return
-
-
-@app.cell
 def _(pysd):
     sd_model = pysd.read_vensim("./Vensim-Model/APL-SFD-Würzburg-V3.mdl")
     simulation_results = sd_model.run().reset_index()

@@ -244,12 +244,8 @@ def _(KMeans, gpd, np, wuerzburg_poly_gdf):
     distance_weights = 1 / (distances + 1)  # +1 verhindert Division durch 0
 
     # Kombiniere Einwohner-Gewichte mit Entfernungs-Gewichten
-    # Option 1: Multiplikation (bevorzugt zentrale UND bevölkerungsreiche Gebiete)
+    # Multiplikation (bevorzugt zentrale UND bevölkerungsreiche Gebiete)
     combined_weights = wuerzburg_poly_gdf["Einwohner"] * distance_weights
-
-    # Option 2: Gewichtete Summe (flexibler)
-    # alpha = 0.7  # Gewichtung: 70% Einwohner, 30% Zentrum
-    # combined_weights = alpha * wuerzburg_poly_gdf["Einwohner"] + (1-alpha) * distance_weights * np.max(wuerzburg_poly_gdf["Einwohner"])
 
     # KMeans mit kombinierten Gewichten
     n_clusters = 60
@@ -264,15 +260,15 @@ def _(KMeans, gpd, np, wuerzburg_poly_gdf):
     for cluster_id in range(n_clusters):
         cluster_cells = wuerzburg_poly_gdf[wuerzburg_poly_gdf["cluster"] == cluster_id]
         cell_coords = np.array([[geom.centroid.x, geom.centroid.y] for geom in cluster_cells.geometry])
-    
+
         # Index der Zelle, die dem Zentrum am nächsten ist
         nearest_idx = np.argmin(np.linalg.norm(cell_coords - cluster_centers[cluster_id], axis=1))
         nearest_cell = cluster_cells.iloc[nearest_idx]
-    
+
         # Korrekte Indizes für die Gewichte verwenden
         original_idx = cluster_cells.iloc[nearest_idx].name  # Original DataFrame Index
         array_idx = wuerzburg_poly_gdf.index.get_loc(original_idx)  # Position im Array
-    
+
         apl_geoms.append(nearest_cell.geometry)
         apl_records.append({
             "Gitter_ID_100m": nearest_cell["Gitter_ID_100m"],

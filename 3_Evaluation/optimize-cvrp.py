@@ -41,7 +41,7 @@ def _(
     #hub_coords = (9.999129, 49.772268) 
     # noch durch gesnappte Koordinaten austauschen, bisher nicht gespeichert
 
-    vehicle_capacity = 250
+    vehicle_capacity = 300
     num_vehicles = 15 
     depot_index = 0
 

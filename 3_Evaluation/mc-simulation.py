@@ -154,7 +154,7 @@ def _(demand_jt_df, results_df, run_monte_carlo_simulation):
         demand_jt_df=demand_jt_df,
         results_df=results_df,
         apl_capacity=48000,
-        num_runs=100,
+        num_runs=50,
         reliability_threshold=0.95,
         random_seed=42
     )
