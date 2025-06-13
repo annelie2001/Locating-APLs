@@ -22,7 +22,8 @@ def _(gpd):
 
     apl_gdf = gpd.read_file("./Data/apl_candidates_clusters.geojson").to_crs("EPSG:4326")
     customer_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson").to_crs("EPSG:4326")
-    return OSRM_URL, apl_gdf, customer_gdf
+    heuristic_gdf = gpd.read_file("./Data/heuristic_result_with_customers.geojson").to_crs("EPSG:4326")
+    return OSRM_URL, apl_gdf, customer_gdf, heuristic_gdf
 
 
 @app.cell
@@ -56,10 +57,13 @@ def _(OSRM_URL, requests, tqdm):
 
 
 @app.cell
-def _(apl_gdf, customer_gdf, snap_points_osrm):
+def _(apl_gdf, customer_gdf, heuristic_gdf, snap_points_osrm):
     # APL-Koordinaten
     apl_gdf["coord_foot"] = snap_points_osrm(apl_gdf, mode="foot")
     apl_gdf["coord_car"] = snap_points_osrm(apl_gdf, mode="car")
+
+    #APL-Koordinaten from Heuristic
+    heuristic_gdf["coord_car"] = snap_points_osrm(heuristic_gdf, mode="car")
 
     # Kunden-Koordinaten
     customer_gdf["coord_foot"] = snap_points_osrm(customer_gdf, mode="foot")
@@ -67,9 +71,10 @@ def _(apl_gdf, customer_gdf, snap_points_osrm):
 
 
 @app.cell
-def _(apl_gdf, customer_gdf):
+def _(apl_gdf, customer_gdf, heuristic_gdf):
     apl_gdf.to_file("./Data/apl_candidates_clusters_snapped.geojson", driver="GeoJSON")
     customer_gdf.to_file("./Data/wuerzburg_bevoelkerung_300m_snapped.geojson", driver="GeoJSON")
+    heuristic_gdf.to_file("./Data/heuristic_result_with_customers_snapped.geojson", driver="GeoJSON")
     return
 
 

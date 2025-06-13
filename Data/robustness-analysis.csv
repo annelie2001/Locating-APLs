@@ -1,15 +1,13 @@
-﻿Test Case;Parameter;Minimize Walking Distances;Demand Scenario;Max Walking Distance Threshold;Setup Costs;APL Capacity (deliveries per month);Number of Vehicles;Vehicle Capacity ( deliveries per day);Number of opened APLs;Number of unserviced Customer Cells;Number of underutilized APLs;Total setup costs;Mean Reliability;Avg. daily delivery route ;Combined costs;Remark
-1;Base Case;False;Neutral (10);1700m;5500 * (1.02) ** (t - 1);4000;15;250;38;10;5;209,000;0.8221;216376;209080.06;
-2;Objective Function;True, c=1;Neutral (10);1700m;5500 * (1.02) ** (t - 1);4000;15;250;64;10;14;352,000;0.9916;267699;352099.05;A lot more APLs, unnecessary if you compare to real DHL APLs
-3;Objective Function;True, c=0.01;Neutral (10);1700m;5500 * (1.02) ** (t - 1);4000;15;250;60;10;14;330,000;0.9915;250596;330092.72;Still way too many APLs
-4;Demand -;False;Pessimistic (1);1700m;5500 * (1.02) ** (t - 1);4000;15;250;36;10;5;198,000;0.6759;211990;198078.44;
-5;Demand -;False;Pessimistic (5);1700m;5500 * (1.02) ** (t - 1);4000;15;250;35;10;5;192,500;0.7267;216430;192580.08;Less APLs but better reliability, probably due to stochastic demand
-6;Demand +;False;Optimistic (15);1700m;5500 * (1.02) ** (t - 1);4000;15;250;37;10;5;203,500;0.8584;229883;203585.06;
-7;Demand +;False;Optimistic (20);1700m;5500 * (1.02) ** (t - 1);4000;15;250;40;10;5;220,000;0.9242;233790;220086.5;Really good reliability
-8;Max Walking Distance +;False;Neutral (10);2000m;5500 * (1.02) ** (t - 1);4000;15;250;34;2;1;187,000;0.787;217805;187080.59;Good reliability for the number of APLs
-9;Max Walking Distance -;False;Neutral (10);1500m;5500 * (1.02) ** (t - 1);4000;15;250;41;25;5;225,500;0.8431;232588;225586.06;Many unserviced cells
-10;APL Capacity -;False;Neutral (10);1700m;5500 * (1.02) ** (t - 1);3000;15;250;48;10;3;264,000;0.8026;249432;264092.29;More locations with multiple APL setups
-11;APL Capacity +;False;Neutral (10);1700m;5500 * (1.02) ** (t - 1);5000;15;250;33;10;5;181,500;0.9007;193034;181571.42;Desirable in terms of costs and reliability but probably not realisitic
-12;Vehicle Capacity -;False;Neutral (10);1700m;5500 * (1.02) ** (t - 1);4000;15;200;38;10;5;209,000;0.8221;Infeasible;;
-13;Vehicle Capacity +;False;Neutral (10);1700m;5500 * (1.02) ** (t - 1);4000;15;300;38;10;5;209,000;0.8221;218886;209080.99;
-14;Heuristik;False;Not considered;Not considered;Not considered;Not considered;15;250;40;0;?;220,000;0.8056;?;#WERT!;
+﻿Test Case;Parameter;Minimize Walking Distances;Demand Scenario;Max Walking Distance Threshold;Setup Costs;APL Capacity (deliveries per month);Number of Vehicles;Vehicle Capacity ( deliveries per day);Number of opened APLs;Number of unserviced Customer Cells;Number of underutilized APLs;Total setup costs;Service Reliability;Demand Satisfaction Rate;Combined Reliability;Avg. daily delivery route ;Combined costs;Remark
+1;Base Case;False;Neutral (10);1700m;5500;4000;15;250;39;10;5;214,500;0.8759;0.9895;0.9327;266044.00;214598.44;
+2;Objective Function;True;Neutral (10);1700m;5500;4000;15;250;65;10;14;357,500;0.9757;0.9987;0.9872;275360.00;357601.88;A lot more APLs, unnecessary if you compare to real DHL APLs
+3;Objective Function;Objective function coefficient: 0.001;;;5500;;15;;60;10;12;330,000;0.9771;0.999;0.98805;250596.00;330092.72;Still way too many APLs
+4;Demand -;False;Pessimistic (1);1700m;5500;4000;15;250;34;10;5;187,000;0.6505;0.8772;0.76385;275360.00;187101.88;
+5;Demand -;False;Pessimistic (5);1700m;5500;4000;15;250;36;10;5;198,000;0.7132;0.9104;0.8118;238079.00;198088.09;Less APLs but better reliability, probably due to stochastic demand
+6;Demand +;False;Optimistic (15);1700m;5500;4000;15;250;39;10;5;214,500;0.925;0.9941;0.95955;233348.00;214586.34;
+7;Demand +;False;Optimistic (20);1700m;5500;4000;15;250;41;10;3;225,500;0.9053;0.9747;0.94;250611.00;225592.73;Really good reliability
+8;Max Walking Distance +;False;Neutral (10);2000m;5500;4000;15;250;35;2;1;192,500;0.8281;0.973;0.90055;210672.00;192577.95;Good reliability for the number of APLs
+9;Max Walking Distance -;False;Neutral (10);1500m;5500;4000;15;250;41;25;5;225,500;0.8851;0.9712;0.92815;232588.00;225586.06;Many unserviced cells
+10;APL Capacity -;False;Neutral (10);1700m;4125;3000;16;250;49;10;3;202,125;0.7633;0.902;0.83265;263178.00;202222.38;More locations with multiple APL setups
+11;APL Capacity +;False;Neutral (10);1700m;6875;5000;15;300;34;10;5;233,750;0.6696;0.9243;0.79695;206765.00;233826.50;Desirable in terms of costs and reliability but probably not realisitic
+12;Heuristik;False;Not considered;1500m air distance;Not considered;4000;15;250;40;56;?;220,000;0.8477;0.8954;0.87155;173097.00;220064.05;Many unserviced cells

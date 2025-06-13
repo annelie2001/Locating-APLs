@@ -20,11 +20,13 @@ def _():
 def _(gpd, pd):
     # Optimization results
     results_df = pd.read_csv("./Data/combined_results_with_setup_costs.csv", sep=";")
+
     #Results from heuristic approach
-    heuristic_results_df = pd.read_csv("./Data/heuristic_results.csv", sep=";")
+    heuristic_results_df = pd.read_csv("./Data/apl_customer_mapping_heuristic.csv", sep=";")
+
     # 300m-grid population data
     wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
-    return results_df, wuerzburg_gdf_300m
+    return heuristic_results_df, results_df, wuerzburg_gdf_300m
 
 
 @app.cell
@@ -36,8 +38,6 @@ def _(pysd):
 
 @app.cell
 def _(simulation_results, wuerzburg_gdf_300m):
-    # Demand share per cell
-    # total_demand_per_period = demand_df_filtered["Number of deliveries : Model-V2-S1"].values
     total_demand_per_period = simulation_results["Number of deliveries"].values
     total_population = wuerzburg_gdf_300m["Einwohner"].sum()
     wuerzburg_gdf_300m["demand_share"] = wuerzburg_gdf_300m["Einwohner"] / total_population
@@ -45,7 +45,7 @@ def _(simulation_results, wuerzburg_gdf_300m):
 
 
 @app.cell
-def _(pd, total_demand_per_period, wuerzburg_gdf_300m):
+def _(heuristic_results_df, pd, total_demand_per_period, wuerzburg_gdf_300m):
     # Demand per cell and period 
 
     periods = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -64,17 +64,26 @@ def _(pd, total_demand_per_period, wuerzburg_gdf_300m):
     demand_jt_df = pd.DataFrame(demand_list)
     demand_jt_df["mean"] = demand_jt_df["demand"]
     demand_jt_df["std"] = demand_jt_df["demand"] * 0.2
-    return (demand_jt_df,)
+
+    # Expand Heuristic df for all periods
+    dfs = []
+    for period in periods:
+        df = heuristic_results_df.copy()
+        df["Period"] = period
+        dfs.append(df)
+
+    # Verbinde alle DataFrames in der Liste zu einem einzigen DataFrame
+    heuristic_results_df_expanded = pd.concat(dfs, ignore_index=True)
+    return demand_jt_df, periods
 
 
 @app.cell
-def _(defaultdict, np):
+def _(defaultdict, np, periods):
     def run_monte_carlo_simulation(
         demand_jt_df,
         results_df,
         apl_capacity,
         num_runs=1000,
-        reliability_threshold=0.95,
         random_seed=None
     ):
         """
@@ -82,13 +91,22 @@ def _(defaultdict, np):
         results_df: Optimization results with columns ["Period", "APL_ID", "Customer_ID"]
         apl_capacity: scalar or dict with capacity per APL per period
         num_runs: number of Monte Carlo samples to simulate
-        reliability_threshold: max. % of overloaded APLs tolerated
         """
 
         if random_seed:
             np.random.seed(random_seed)
 
         overloaded_counts = []
+        overloaded_demands = []
+
+        # 1. Ermittle die zugeordneten Kunden
+        assigned_customers = set(results_df["Customer_ID"].unique())
+
+        # 2. Ermittle die nicht zugeordneten Zellen
+        all_cells = set(demand_jt_df["j"].unique())
+        unassigned_cells = all_cells - assigned_customers
+
+        print(f"Anzahl nicht zugeordneter Zellen: {len(unassigned_cells)}")
 
         # Build a structure: {(t, apl): [assigned_customers]}
         assignment_map = defaultdict(list)
@@ -117,28 +135,50 @@ def _(defaultdict, np):
                     ]["sample"].sum()
                     apl_demand[(t, apl)] += demand_val
 
-            # 3. Check overloads
-            overloads = 0
+            # 3. Berechne die nicht erfüllte Nachfrage pro Periode
+            unassigned_demand = defaultdict(float)
+            for t in periods:
+                for j in unassigned_cells:
+                    demand_val = demand_samples[
+                        (demand_samples["j"] == j) & (demand_samples["t"] == t)
+                    ]["sample"].sum()
+                    unassigned_demand[t] += demand_val
+
+            # 4. Check overloads
             total = 0
-            for (t, apl), total_demand in apl_demand.items():
+            overloads = 0
+            total_demand = 0
+            overloads_demand = 0
+            for (t, apl), total_apl_demand in apl_demand.items():
                 cap = apl_capacity.get(apl, apl_capacity) if isinstance(apl_capacity, dict) else apl_capacity
                 total += 1
-                if total_demand > cap:
+                total_demand += total_apl_demand
+                if total_apl_demand > cap:
                     overloads += 1
-                    print(f"⚠️ APL {apl} überlastet in Periode {t} (Last: {total_demand}, Kapazität: {cap})")
+                    overloads_demand += total_apl_demand-cap
+                    # print(f"⚠️ Demand not satisfied: {total_apl_demand-cap}")
 
-            reliability = 1 - (overloads / total)
-            overloaded_counts.append(reliability)
+            # Berücksichtige die nicht erfüllte Nachfrage als zusätzliche "Überlast"
+            for t, demand in unassigned_demand.items():
+                total += 1
+                overloads += 1
+                total_demand += total_apl_demand
+                overloads_demand += total_apl_demand            
+                # print(f"⚠️ Demand not satisfied: {total_apl_demand}")
+
+            reliability_counts = 1 - (overloads / total)
+            reliability_demands = 1- (overloads_demand / total_demand)
+            overloaded_counts.append(reliability_counts)
+            overloaded_demands.append(reliability_demands)
             print(f"✅ Simulation {run + 1} abgeschlossen.\n")
 
         # Return result summary
-        reliability_mean = np.mean(overloaded_counts)
-        success_rate = np.mean(np.array(overloaded_counts) >= reliability_threshold)
+        reliability_counts_mean = np.mean(overloaded_counts)
+        reliability_demands_mean= np.mean(overloaded_demands)
 
         result_summary = {
-            "mean_reliability": reliability_mean,
-            "success_rate": success_rate,
-            "threshold": reliability_threshold,
+            "mean_reliability": reliability_counts_mean,
+            "mean_demand_satisfaction": reliability_demands_mean,
             "runs": num_runs,
         }
 
@@ -154,8 +194,7 @@ def _(demand_jt_df, results_df, run_monte_carlo_simulation):
         demand_jt_df=demand_jt_df,
         results_df=results_df,
         apl_capacity=48000,
-        num_runs=50,
-        reliability_threshold=0.95,
+        num_runs=100,
         random_seed=42
     )
     return (result_summary,)
@@ -165,10 +204,9 @@ def _(demand_jt_df, results_df, run_monte_carlo_simulation):
 def _():
     # result_summary_heuristic, reliability_runs_heuristic = run_monte_carlo_simulation(
     #     demand_jt_df=demand_jt_df,
-    #     results_df=heuristic_results_df,
+    #     results_df=heuristic_results_df_expanded,
     #     apl_capacity=48000,
     #     num_runs=100,
-    #     reliability_threshold=0.95,
     #     random_seed=42
     # )
     return
@@ -178,8 +216,8 @@ def _():
 def _(result_summary):
     def print_summary(summary):
         print("Simulation results:")
-        print(f"  Mean reliability: {summary['mean_reliability']:.4f}")
-        print(f"  Success rate (>{summary['threshold']:.2f} reliability): {summary['success_rate']:.4f}")
+        print(f"  Service Reliability (Proportion of APLs without overload): {summary['mean_reliability']:.4f}")
+        print(f"  Demand Satisfaction Rate (Proportion of demand satisfied): {summary['mean_demand_satisfaction']:.4f}")
         print(f"  Number of simulations: {summary['runs']}")
 
     print("Optimization model:")

@@ -225,10 +225,8 @@ def _(model, pd, pyo, value):
     solver = pyo.SolverFactory('cplex')
     # Setze Abbruchkriterien
     solver.options['timelimit'] = 600
-    # solver.options['mipgap'] = 0.0001
 
     results = solver.solve(model, tee=True)
-    # results.write()
 
     if results.solver.termination_condition == pyo.TerminationCondition.optimal:
         print("Optimal solution found.")

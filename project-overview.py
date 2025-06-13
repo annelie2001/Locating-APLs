@@ -27,7 +27,6 @@ def _():
 def _(gpd, np, pd, pysd):
     # Population and geo data
     wuerzburg_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
-    wuerzburg_gdf_200m = gpd.read_file("./Data/wuerzburg_bevoelkerung_200m.geojson")
     potential_locations_gdf = gpd.read_file("./Data/apl_candidates_clusters.geojson")
 
 
@@ -125,6 +124,40 @@ def _(json, requests):
 
 
 @app.cell
+def _(gpd, mo):
+    def heuristic_APLs(gdf, anzahl=1, mindestabstand_zellen=3):
+        gdf_sorted = gdf.sort_values(by="Einwohner", ascending=False).copy()
+
+        # Raster-Koordinaten berechnen (z. B. Gitterpositionen in "Zellen")
+        gdf_sorted['row'] = ((gdf_sorted['y_mp_100m'] - gdf_sorted['y_mp_100m'].min()) / 100).astype(int)
+        gdf_sorted['col'] = ((gdf_sorted['x_mp_100m'] - gdf_sorted['x_mp_100m'].min()) / 100).astype(int)
+
+        belegte_zellen = []
+        ausgewaehlte = []
+
+        for _, row in gdf_sorted.iterrows():
+            r, c = row['row'], row['col']
+
+            # Prüfen, ob zu nah an bestehenden
+            too_close = any(
+                abs(r - br) <= mindestabstand_zellen and abs(c - bc) <= mindestabstand_zellen
+                for br, bc in belegte_zellen
+            )
+
+            if not too_close:
+                belegte_zellen.append((r, c))
+                ausgewaehlte.append(row)
+                if len(ausgewaehlte) >= anzahl:
+                    break
+
+
+        return gpd.GeoDataFrame(ausgewaehlte, crs=gdf.crs)
+
+    anzahl_slider = mo.ui.slider(start=0, stop=50, value=0, step=1, label="Number of APLs")
+    return anzahl_slider, heuristic_APLs
+
+
+@app.cell
 def _(
     Fullscreen,
     anzahl_slider,
@@ -190,7 +223,7 @@ def _(
 
     heuristic_layer.add_to(m)
 
-    folium.LayerControl(collapsed=True, position='bottomleft').add_to(m)
+    folium.LayerControl(collapsed=True, position='topleft').add_to(m)
 
 
     mo.vstack([
@@ -199,56 +232,18 @@ def _(
             #Würzburg Status Quo: Population and APL Landscape
 
             ##Population Map Würzburg
-            In order to plan the optimal placement of parcel lockers (APLs) in Würzburg, an understanding of the population distribution is crucial. The interactive map below visualizes population density at the level of 100m x 100m grid cells according to the Zensus 2022 data.
+
+            Before starting the project, I created this interactive map to get an intuition for the problem. The map shows the population density of the city of Würzburg at the level of 100m x 100m grid cells according to the Zensus 2022 data. Additionally, you can activate to additional layers:
+
+            * **DHL 'Packstationen':** The locations of existing DHL parcel lockers serve as a qualitative real-world benchmark (There are currently {(len(packstations))} DHL parcel lockers in Würzburg)
+            * **Heuristic APL locations:** As a second, quantitative benchmark, I applied a heurisitc method based on population density to identify potentially optimal APL locations. This method places APLs in the most densely populated areas while maintaining a minimum distance between locations. You can setup APLs according to this heuristic with the interactive slider.
+
+            When setting up approximately 40 APLs with the heuristic approach, the placement already looks pretty similar to the DHL setup. In the following, I will evaluate whether a more sophisticated optimization approach results in better reliability and cost-efficiency compare to the simple benchmark.
             """),
-        m,
         anzahl_slider,
-        mo.md(
-            f"""
-            To evaluate the effectiveness of different location strategies, two additional layers are displayed:
-
-            * **DHL Packstations:** The locations of existing DHL Packstations serve as a real-world benchmark and enable a comparison with alternative approaches.
-            * **Heuristic APL locations:** As a second benchmark, I applied a heurisitc method based on population density to identify potentially optimal APL locations. This method places APLs in the most densely populated areas while maintaining a minimum distance between locations.  
-
-            (For reference: There are {(len(packstations))} DHL parcel lockers in Würzburg)
-            """
-        )
+        m
     ], gap=2)
     return colormap, dhl_layer
-
-
-@app.cell
-def _(gpd, mo):
-    def heuristic_APLs(gdf, anzahl=1, mindestabstand_zellen=3):
-        gdf_sorted = gdf.sort_values(by="Einwohner", ascending=False).copy()
-
-        # Raster-Koordinaten berechnen (z. B. Gitterpositionen in "Zellen")
-        gdf_sorted['row'] = ((gdf_sorted['y_mp_100m'] - gdf_sorted['y_mp_100m'].min()) / 100).astype(int)
-        gdf_sorted['col'] = ((gdf_sorted['x_mp_100m'] - gdf_sorted['x_mp_100m'].min()) / 100).astype(int)
-
-        belegte_zellen = []
-        ausgewaehlte = []
-
-        for _, row in gdf_sorted.iterrows():
-            r, c = row['row'], row['col']
-
-            # Prüfen, ob zu nah an bestehenden
-            too_close = any(
-                abs(r - br) <= mindestabstand_zellen and abs(c - bc) <= mindestabstand_zellen
-                for br, bc in belegte_zellen
-            )
-
-            if not too_close:
-                belegte_zellen.append((r, c))
-                ausgewaehlte.append(row)
-                if len(ausgewaehlte) >= anzahl:
-                    break
-
-
-        return gpd.GeoDataFrame(ausgewaehlte, crs=gdf.crs)
-
-    anzahl_slider = mo.ui.slider(start=0, stop=50, value=0, step=1, label="Number of APLs")
-    return anzahl_slider, heuristic_APLs
 
 
 @app.cell
@@ -256,21 +251,22 @@ def _(
     apl_users_chart,
     deliveries_chart,
     filtered_simulation_results,
-    market_size_chart,
     mo,
+    purchases_chart,
 ):
     mo.vstack([
         mo.md(
             r"""
             #System Dynamics Model  
-            In the next step, I adapted the Stocks and Flows Diagram by Rabe et al. to Würzburg to simulate the demand for APLs over the next 10 years.
+            In the next step, I adapted the Stocks and Flows Diagram by Rabe et al. to Würzburg to simulate the demand for APL deliveries over the next 10 years using Vensim.
             """),
-        mo.image(src="./Vensim-Model/APL-SFD-Würzburg-V2.png",
+        mo.image(src="./Images/APL-SFD-Würzburg-V3.png",
                 width=450, style={"margin-right": "auto", "margin-left": "auto"}),
         mo.md("##Simulation results"),
         mo.hstack([
-            market_size_chart,
+            # market_size_chart,
             apl_users_chart,
+            purchases_chart,
             deliveries_chart,
         ]),
         mo.callout(filtered_simulation_results),
@@ -285,22 +281,17 @@ def _(alt, simulation_results):
         y=alt.Y("Number of deliveries:Q")
     )
 
-    #deliveries_chart = mo.ui.altair_chart(deliveries_chart, chart_selection="point")
-
     apl_users_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
         y=alt.Y("APL users")
     )
 
-    #apl_users_chart = mo.ui.altair_chart(apl_users_chart, chart_selection="point")
-
-    market_size_chart = alt.Chart(simulation_results).mark_line().encode(
+    purchases_chart = alt.Chart(simulation_results).mark_line().encode(
         x=alt.X("time:Q"),
-        y=alt.Y("Market Size:Q")
+        y=alt.Y("Online purchases per year:Q")
     )
 
-    #market_size_chart = mo.ui.altair_chart(market_size_chart, chart_selection="point")
-    return apl_users_chart, deliveries_chart, market_size_chart
+    return apl_users_chart, deliveries_chart, purchases_chart
 
 
 @app.cell
@@ -314,10 +305,10 @@ def _(interactive_chart, mo, scenario_selection):
             The scenario and period dependent demand is modeled according to the following equation:
 
             $$
-            D_{ts} = \frac{\delta}{\log(t + 1)} \cdot t \cdot \mu_{ts}
+            D_{ts} = \delta \cdot t \cdot \mu_{ts}
             $$
 
-            with $\delta = 0.003$  
+            with $\delta = 0.01$  
             and
 
             $$
@@ -491,8 +482,8 @@ def _(
 
             In the next step, I modeled the problem as a Capacitated **Facility Location Problem (CFLP)**. The initial dataset consists of 100-meter grid cells across the city of Würzburg, each representing a potential facility site or demand point. However, including all grid cells as possible facility locations would result in an intractably large number of decision variables.  
             To address this issue, I used clustering techniques to reduce the candidate locations to **60 population-based clusters**, which serve as aggregated potential APL sites. For the demand sites, I started of with a **300-meter grid**. The resulting optimization model is implemented in Pyomo and solved using the CPLEX solver.  
-            I solve the problem over ten years.
-            In total, **{summary_df['Total_APLs_Opened'].sum()} APLs** are deployed.
+            I solve the problem over a ten-year time horizon.
+            In total, **{summary_df['Total_APLs_Opened'].sum()} APLs** are deployed for a defined base case.
             """
         ),
         m1
@@ -504,30 +495,53 @@ def _(
 @app.cell
 def _(mo, pd):
     evaluation_df = pd.read_csv("./Data/robustness-analysis.csv", sep=";")
-    mo.md("# Results")
-
-    duplicates = evaluation_df.duplicated(subset=["Combined costs", "Mean Reliability"], keep=False)
-    print("Anzahl der Duplikate:", duplicates.sum())
-    print(evaluation_df[duplicates])
+    mo.md(r"""
+        # Results
+        I conducted a cost and robustness analysis for different parameter setups of the CFLP. 
+        """)
     return (evaluation_df,)
 
 
 @app.cell
 def _(alt, evaluation_df, mo):
+    # Farbskala definieren
+    color_scale_dots = alt.Scale(
+        domain=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        # range=['green', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000','lightgreen']
+        range=['red', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange','red']
+    )
+
     # Selection for interactivity
     selection = alt.selection_point(name="selected", fields=["Test Case"])
 
-    chart = alt.Chart(evaluation_df).mark_circle(size=100).encode(
-        x=alt.X("Combined costs:Q", title="Total Costs"),
-        y=alt.Y("Mean Reliability:Q", title="Reliability"),
-        detail="Test Case:N",
-        color=alt.condition(selection, alt.value("red"), alt.value("gray")),
-        tooltip=["Test Case:N", "Combined costs:Q", "Mean Reliability:Q"]
-    ).add_params(selection).properties(
+    # Base chart for the circles
+    base = alt.Chart(evaluation_df).mark_circle(size=100).encode(
+        x=alt.X("Combined costs:Q", title="Combined Costs"),
+        y=alt.Y("Combined Reliability:Q", title="Combined Reliability"),
+        color=alt.condition(selection, "Test Case:N", alt.value("lightgray"), scale=color_scale_dots),
+        tooltip=["Test Case:N", "Combined costs:Q", "Combined Reliability:Q"]
+    ).add_params(selection)
+
+    # Text labels
+    text = alt.Chart(evaluation_df).mark_text(
+        align='center',
+        baseline='middle',
+        fontSize=11,
+        dx=-9,  # Nudge the text to the right
+        dy=0   # Nudge the text up
+    ).encode(
+        x=alt.X("Combined costs:Q"),
+        y=alt.Y("Combined Reliability:Q"),
+        text="Test Case:N",
+        color=alt.condition(selection, alt.value("black"), alt.value("black"))
+    )
+
+    # Combine the layers
+    chart = (base + text).properties(
         width=600, height=400, title="Reliability vs Total Costs"
     )
+
     chart = mo.ui.altair_chart(chart)
-    chart
 
     return (chart,)
 
@@ -543,7 +557,15 @@ def _(evaluation_df, selected):
     selected_cases = selected.get("selected", {}).get("Test Case", [])
     print(selected_cases)
     filtered_evaluation_df = evaluation_df[evaluation_df["Test Case"].isin(selected_cases)]
-    filtered_evaluation_df
+    return (filtered_evaluation_df,)
+
+
+@app.cell
+def _(chart, filtered_evaluation_df, mo):
+    mo.hstack([
+        chart,
+        filtered_evaluation_df
+    ])
     return
 
 

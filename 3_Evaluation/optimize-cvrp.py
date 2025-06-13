@@ -38,11 +38,8 @@ def _(
 ):
     # === Parameter ===
 
-    #hub_coords = (9.999129, 49.772268) 
-    # noch durch gesnappte Koordinaten austauschen, bisher nicht gespeichert
-
-    vehicle_capacity = 300
-    num_vehicles = 15 
+    vehicle_capacity = 250
+    num_vehicles = 15
     depot_index = 0
 
     df_expanded, df_original = process_apl_data_with_splitting(df_apl=df_apl)
@@ -329,6 +326,151 @@ def _(data, get_routes, manager, pd, routing, solution):
     df_routes = pd.DataFrame(padded_routes)
     df_routes = df_routes.T
     df_routes.to_csv('./Data/routes.csv', index=False, header=False, sep=";")
+    return
+
+
+@app.cell
+def _(
+    depot_index,
+    num_vehicles,
+    pd,
+    pywrapcp,
+    routing_enums_pb2,
+    vehicle_capacity,
+):
+    # === Daten einlesen (Heuristik) ===
+    df_dist_h = pd.read_csv("./Data/cvrp_distance_matrix_heuristic.csv", index_col=0, sep=";")
+    df_dist_h.columns = df_dist_h.columns.str.replace(r"^to_apl_", "", regex=True)
+    df_dist_h.index = df_dist_h.index.str.replace(r"^to_apl_", "", regex=True)
+    hub_id_h = df_dist_h.index[-1]
+    df_apl_h = pd.read_csv("./Data/apl_customer_mapping_heuristic.csv", sep=";")
+
+
+    apl_ids_h = df_apl_h['APL_ID'].unique().tolist()
+    daily_demand_h = [0] + [100] * len(apl_ids_h)
+    distance_matrix_h = df_dist_h.values.astype(int)
+
+    # === DEBUGGING: Kapazitäts-Analyse (Heuristik) ===
+    print("\n=== KAPAZITÄTS-ANALYSE (Heuristik) ===")
+    print(f"Demands (Heuristik): {daily_demand_h}")
+    print(f"Anzahl Knoten (inkl. Hub) (Heuristik): {len(daily_demand_h)}")
+    print(f"Gesamtbedarf (Heuristik): {sum(daily_demand_h)}")
+    print(f"Fahrzeugkapazität: {vehicle_capacity}")
+    print(f"Anzahl Fahrzeuge: {num_vehicles}")
+    print(f"Gesamtkapazität: {vehicle_capacity * num_vehicles}")
+    print(f"Kapazität ausreichend: {sum(daily_demand_h) <= vehicle_capacity * num_vehicles}")
+
+    # Überprüfe einzelne Bedarfe vs. Kapazität (Heuristik)
+    oversized_demands_h = [i for i, d in enumerate(daily_demand_h) if d > vehicle_capacity]
+    if oversized_demands_h:
+        print(f"WARNUNG: Bedarfe größer als Fahrzeugkapazität bei Knoten (Heuristik): {oversized_demands_h}")
+        for idh in oversized_demands_h:
+            print(f"  Knoten {idh}: Bedarf {daily_demand_h[idh]} > Kapazität {vehicle_capacity}")
+
+    # === Routing-Modell aufbauen (Heuristik) ===
+    def create_data_model_h():
+        return {
+            'distance_matrix': distance_matrix_h.tolist(),
+            'demands': daily_demand_h,
+            'vehicle_capacities': [vehicle_capacity] * num_vehicles,
+            'num_vehicles': num_vehicles,
+            'depot': depot_index
+        }
+
+    data_h = create_data_model_h()
+
+    manager_h = pywrapcp.RoutingIndexManager(len(data_h['distance_matrix']),
+                                               data_h['num_vehicles'], data_h['depot'])
+
+    routing_h = pywrapcp.RoutingModel(manager_h)
+
+    def distance_callback_h(from_index, to_index):
+        from_node = manager_h.IndexToNode(from_index)
+        to_node = manager_h.IndexToNode(to_index)
+        return data_h['distance_matrix'][from_node][to_node]
+
+    transit_callback_index_h = routing_h.RegisterTransitCallback(distance_callback_h)
+    routing_h.SetArcCostEvaluatorOfAllVehicles(transit_callback_index_h)
+
+    # Kapazitätsbeschränkungen (Heuristik)
+    def demand_callback_h(from_index):
+        from_node = manager_h.IndexToNode(from_index)
+        return data_h['demands'][from_node]
+
+    demand_callback_index_h = routing_h.RegisterUnaryTransitCallback(demand_callback_h)
+    routing_h.AddDimensionWithVehicleCapacity(
+        demand_callback_index_h,
+        0,  # Null Kapazitäts-Spielraum
+        data_h['vehicle_capacities'],
+        True,
+        'Capacity'
+    )
+
+    # Lösungsstrategie festlegen (Heuristik)
+    search_parameters_h = pywrapcp.DefaultRoutingSearchParameters()
+    search_parameters_h.log_search = True
+
+    search_parameters_h.first_solution_strategy = (
+        routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+    search_parameters_h.local_search_metaheuristic = (
+        routing_enums_pb2.LocalSearchMetaheuristic.AUTOMATIC)
+
+    search_parameters_h.time_limit.seconds = 10
+    search_parameters_h.solution_limit = 10
+
+    # Lösung berechnen (Heuristik)
+    solution_h = routing_h.SolveWithParameters(search_parameters_h)
+
+    # === Ergebnisse auslesen (Heuristik) ===
+    def get_routes_h(data, manager, routing, solution):
+        routes = []
+        total_distance = 0
+        total_load = 0
+        for vehicle_id in range(data['num_vehicles']):
+            route = []
+            index = routing.Start(vehicle_id)
+            route_distance = 0
+            route_load = 0
+            plan_output = f'Route for vehicle {vehicle_id}:'
+            while not routing.IsEnd(index):
+                node_index = manager_h.IndexToNode(index)
+                route_load += data['demands'][node_index]
+                if node_index == 0:
+                    route.append("Hub")  # Knoten 0 ist der Hub
+                    plan_output += " Hub ->"
+                else:
+                    route.append(apl_ids_h[node_index - 1])  # APL_ID für andere Knoten
+                    plan_output += f' {apl_ids_h[node_index - 1]} (load: {route_load}) ->'
+                previous_index = index
+                index = solution.Value(routing.NextVar(index))
+                route_distance += routing.GetArcCostForVehicle(previous_index, index, vehicle_id)
+            node_index = manager_h.IndexToNode(index)
+            if node_index == 0:
+                route.append("Hub")  # Knoten 0 ist der Hub
+            else:
+                route.append(apl_ids_h[node_index - 1])  # APL_ID für andere Knoten
+            routes.append(route)
+            plan_output += " Hub \n"
+            plan_output += f'Distance: {route_distance}m, Load: {route_load}\n'
+            print(plan_output)
+            total_distance += route_distance
+            total_load += route_load
+        print(f'Total distance of all routes: {total_distance}m')
+        print(f'Total load delivered: {total_load}')
+        return routes
+
+    if solution_h:
+        routes_h = get_routes_h(data_h, manager_h, routing_h, solution_h)
+    else:
+        print("Keine Lösung gefunden (Heuristik).")
+
+    # Save routes (Heuristik)
+    if solution_h:
+        max_len_h = max(len(route) for route in routes_h)
+        padded_routes_h = [route + [''] * (max_len_h - len(route)) for route in routes_h]
+        df_routes_h = pd.DataFrame(padded_routes_h)
+        df_routes_h = df_routes_h.T
+        df_routes_h.to_csv('./Data/routes_heuristic.csv', index=False, header=False, sep=";")
     return
 
 

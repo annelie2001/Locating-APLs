@@ -1,0 +1,184 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.13.2"
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "26d4f42d7cb2e99aee3b67721c02172b",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "load C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\zlib1.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\abseil_dll.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\utf8_validity.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\re2.dll...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "load C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\libprotobuf.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\highs.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\ortools.dll...\n"
+        }
+      ]
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "e83b0f4e48ddb27eba4b4718d5b40e8b",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "53799c7f6f0fb3de2596b639076d34df",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Original APLs: 39\nKeine APLs mit mehrfachen \u00d6ffnungen gefunden\nErweiterte APLs: 39\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Neue Distance Matrix: (40, 40)\nAPLs mit Distanz 0 zu sich selbst (aufgeteilte Teile): 0\n"
+        }
+      ]
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "294b4142ec4d5f911192cf67825727ce",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\n=== KAPAZIT\u00c4TS-ANALYSE ===\nDemands: [0, 130, 127, 130, 61, 29, 87, 125, 114, 129, 126, 129, 120, 121, 51, 101, 63, 113, 61, 118, 79, 116, 14, 74, 103, 86, 30, 0, 76, 81, 99, 90, 85, 84, 64, 90, 69, 23, 110, 96]\nAnzahl Knoten (inkl. Hub): 40\nGesamtbedarf: 3404\nFahrzeugkapazit\u00e4t: 250\nAnzahl Fahrzeuge: 15\nGesamtkapazit\u00e4t: 3750\nKapazit\u00e4t ausreichend: True\n"
+        }
+      ]
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "027df9200ea39d5c9925637d7af37834",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "PKri",
+      "code_hash": "876d397ca2651af97e6fae8ed577de5b",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "64a5ac764146d256c8e26848dea0f249",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<pre style='font-size: 12px'>True</pre>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "SFPL",
+      "code_hash": "e15f50cf302bb280e7cf29e8d14dcd4d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "I0000 00:00:1749713979.450480   11016 search.cc:308] Start search (memory used = 211.20 MB)\nI0000 00:00:1749713979.450836   11016 search.cc:308] Root node processed (time = 0 ms, constraints = 296, memory used = 211.20 MB)\nI0000 00:00:1749713979.453392   11016 search.cc:308] Solution #0 (259155, time = 2 ms, branches = 34, failures = 1, depth = 33, memory used = 211.31 MB, limit = 10%)\nI0000 00:00:1749713979.454889   11016 search.cc:308] Solution #1 (253321, improvement rate = -2251.16%/s, maximum = 259155, time = 4 ms, branches = 38, failures = 3, depth = 33, Relocate<1>, neighbors = 328, filtered neighbors = 1, accepted neighbors = 1, memory used = 211.34 MB, limit = 20%)\nI0000 00:00:1749713979.458823   11016 search.cc:308] Solution #2 (253169, improvement rate = -20.001%/s, maximum = 259155, time = 8 ms, branches = 43, failures = 5, depth = 33, Relocate<1>, neighbors = 1103, filtered neighbors = 2, accepted neighbors = 2, memory used = 211.34 MB, limit = 30%)\nI0000 00:00:1749713979.459988   11016 search.cc:308] Solution #3 (250330, improvement rate = -1121.39%/s, maximum = 259155, time = 9 ms, branches = 47, failures = 7, depth = 33, Relocate<1>, neighbors = 1316, filtered neighbors = 3, accepted neighbors = 3, memory used = 211.34 MB, limit = 40%)\nI0000 00:00:1749713979.460289   11016 search.cc:308] Solution #4 (245506, improvement rate = -4.824e+08%/s, maximum = 259155, time = 9 ms, branches = 53, failures = 9, depth = 33, Relocate<1>, neighbors = 1344, filtered neighbors = 4, accepted neighbors = 4, memory used = 211.35 MB, limit = 50%)\nI0000 00:00:1749713979.460762   11016 search.cc:308] Solution #5 (231958, improvement rate = -1.3548e+09%/s, maximum = 259155, time = 10 ms, branches = 57, failures = 11, depth = 33, Relocate<1>, neighbors = 1593, filtered neighbors = 5, accepted neighbors = 5, memory used = 211.35 MB, limit = 60%)\nI0000 00:00:1749713979.461377   11016 search.cc:308] Solution #6 (230865, improvement rate = -1.093e+08%/s, maximum = 259155, time = 10 ms, branches = 62, failures = 13, depth = 33, Relocate<1>, neighbors = 1634, filtered neighbors = 6, accepted neighbors = 6, memory used = 211.35 MB, limit = 70%)\nI0000 00:00:1749713979.461880   11016 search.cc:308] Solution #7 (229544, improvement rate = -1.321e+08%/s, maximum = 259155, time = 11 ms, branches = 66, failures = 15, depth = 33, Relocate<1>, neighbors = 1677, filtered neighbors = 7, accepted neighbors = 7, memory used = 211.35 MB, limit = 80%)\nI0000 00:00:1749713979.462785   11016 search.cc:308] Solution #8 (226298, improvement rate = -3.246e+08%/s, maximum = 259155, time = 12 ms, branches = 73, failures = 17, depth = 33, Relocate<1>, neighbors = 1734, filtered neighbors = 8, accepted neighbors = 8, memory used = 211.36 MB, limit = 90%)\nI0000 00:00:1749713979.463408   11016 search.cc:308] Solution #9 (226044, improvement rate = -2.54e+07%/s, maximum = 259155, time = 12 ms, branches = 77, failures = 19, depth = 33, Relocate<1>, neighbors = 1832, filtered neighbors = 9, accepted neighbors = 9, memory used = 211.36 MB, limit = 100%)\nI0000 00:00:1749713979.463544   11016 search.cc:308] Finished search tree (time = 12 ms, branches = 77, failures = 51, neighbors = 1832, filtered neighbors = 9, accepted neigbors = 9, memory used = 211.36 MB)\nI0000 00:00:1749713979.463623   11016 search.cc:308] End search (time = 13 ms, branches = 77, failures = 51, memory used = 211.36 MB, speed = 5923 branches/s)\n"
+        }
+      ]
+    },
+    {
+      "id": "BYtC",
+      "code_hash": "9241819603eeee3285b124bfef6c4148",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "RGSE",
+      "code_hash": "b731d436f62bc07cee91d5e347058105",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Route for vehicle 0: Hub -> 100mN29660E43135 (load: 14) -> 100mN29647E43143 (load: 104) -> 100mN29637E43140 (load: 214) -> Hub \nDistance: 23830m, Load: 214\n\nRoute for vehicle 1: Hub -> 100mN29677E43156 (load: 0) -> 100mN29684E43150 (load: 63) -> 100mN29677E43188 (load: 153) -> 100mN29682E43209 (load: 249) -> Hub \nDistance: 25954m, Load: 249\n\nRoute for vehicle 2: Hub -> 100mN29643E43154 (load: 118) -> 100mN29645E43147 (load: 244) -> Hub \nDistance: 15817m, Load: 244\n\nRoute for vehicle 3: Hub -> 100mN29606E43198 (load: 23) -> 100mN29621E43139 (load: 53) -> 100mN29622E43153 (load: 156) -> 100mN29608E43162 (load: 235) -> Hub \nDistance: 20482m, Load: 235\n\nRoute for vehicle 4: Hub -> 100mN29649E43165 (load: 130) -> 100mN29648E43160 (load: 246) -> Hub \nDistance: 12810m, Load: 246\n\nRoute for vehicle 5: Hub -> 100mN29658E43183 (load: 74) -> 100mN29671E43184 (load: 199) -> Hub \nDistance: 14541m, Load: 199\n\nRoute for vehicle 6: Hub -> 100mN29655E43174 (load: 120) -> 100mN29655E43169 (load: 219) -> Hub \nDistance: 12232m, Load: 219\n\nRoute for vehicle 7: Hub -> 100mN29606E43185 (load: 29) -> 100mN29630E43162 (load: 159) -> 100mN29634E43159 (load: 244) -> Hub \nDistance: 16517m, Load: 244\n\nRoute for vehicle 8: Hub -> 100mN29617E43204 (load: 51) -> 100mN29608E43179 (load: 132) -> 100mN29611E43167 (load: 246) -> Hub \nDistance: 14405m, Load: 246\n\nRoute for vehicle 9: Hub -> 100mN29658E43191 (load: 101) -> 100mN29667E43188 (load: 170) -> 100mN29664E43179 (load: 234) -> Hub \nDistance: 14464m, Load: 234\n\nRoute for vehicle 10: Hub -> 100mN29637E43169 (load: 86) -> 100mN29631E43167 (load: 207) -> Hub \nDistance: 11009m, Load: 207\n\nRoute for vehicle 11: Hub -> 100mN29644E43182 (load: 129) -> 100mN29638E43175 (load: 242) -> Hub \nDistance: 9836m, Load: 242\n\nRoute for vehicle 12: Hub -> 100mN29624E43178 (load: 76) -> 100mN29631E43173 (load: 205) -> Hub \nDistance: 9487m, Load: 205\n\nRoute for vehicle 13: Hub -> 100mN29647E43211 (load: 61) -> 100mN29661E43200 (load: 188) -> 100mN29665E43151 (load: 249) -> Hub \nDistance: 21175m, Load: 249\n\nRoute for vehicle 14: Hub -> 100mN29628E43202 (load: 84) -> 100mN29633E43200 (load: 171) -> Hub \nDistance: 3485m, Load: 171\n\nTotal distance of all routes: 226044m\nTotal load delivered: 3404\n"
+        }
+      ]
+    },
+    {
+      "id": "Kclp",
+      "code_hash": "e81f6997991c07559cd3f536e1161d90",
+      "outputs": [],
+      "console": []
+    }
+  ]
+}

@@ -1,0 +1,642 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.13.2"
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "df62c33774618d47604436aeeb91f681",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "8e03b216003ded23dfed43ac95d790f8",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "31560f6c65802b786988347a4048277b",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "923e38878e4f243dc842f7d62dff446b",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "7ae04bdc82cd3734bfce88dd11d11446",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "PKri",
+      "code_hash": "81a2822506eabaf65c14b3700934df05",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "009346ad73716544e45cd6b8f1c17b87",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Anzahl nicht zugeordneter Zellen: 10\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\ud83d\udd04 Simulation 1/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 1 abgeschlossen.\n\n\ud83d\udd04 Simulation 2/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 2 abgeschlossen.\n\n\ud83d\udd04 Simulation 3/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 3 abgeschlossen.\n\n\ud83d\udd04 Simulation 4/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 4 abgeschlossen.\n\n\ud83d\udd04 Simulation 5/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 5 abgeschlossen.\n\n\ud83d\udd04 Simulation 6/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 6 abgeschlossen.\n\n\ud83d\udd04 Simulation 7/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 7 abgeschlossen.\n\n\ud83d\udd04 Simulation 8/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 8 abgeschlossen.\n\n\ud83d\udd04 Simulation 9/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 9 abgeschlossen.\n\n\ud83d\udd04 Simulation 10/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 10 abgeschlossen.\n\n\ud83d\udd04 Simulation 11/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 11 abgeschlossen.\n\n\ud83d\udd04 Simulation 12/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 12 abgeschlossen.\n\n\ud83d\udd04 Simulation 13/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 13 abgeschlossen.\n\n\ud83d\udd04 Simulation 14/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 14 abgeschlossen.\n\n\ud83d\udd04 Simulation 15/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 15 abgeschlossen.\n\n\ud83d\udd04 Simulation 16/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 16 abgeschlossen.\n\n\ud83d\udd04 Simulation 17/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 17 abgeschlossen.\n\n\ud83d\udd04 Simulation 18/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 18 abgeschlossen.\n\n\ud83d\udd04 Simulation 19/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 19 abgeschlossen.\n\n\ud83d\udd04 Simulation 20/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 20 abgeschlossen.\n\n\ud83d\udd04 Simulation 21/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 21 abgeschlossen.\n\n\ud83d\udd04 Simulation 22/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 22 abgeschlossen.\n\n\ud83d\udd04 Simulation 23/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 23 abgeschlossen.\n\n\ud83d\udd04 Simulation 24/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 24 abgeschlossen.\n\n\ud83d\udd04 Simulation 25/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 25 abgeschlossen.\n\n\ud83d\udd04 Simulation 26/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 26 abgeschlossen.\n\n\ud83d\udd04 Simulation 27/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 27 abgeschlossen.\n\n\ud83d\udd04 Simulation 28/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 28 abgeschlossen.\n\n\ud83d\udd04 Simulation 29/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 29 abgeschlossen.\n\n\ud83d\udd04 Simulation 30/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 30 abgeschlossen.\n\n\ud83d\udd04 Simulation 31/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 31 abgeschlossen.\n\n\ud83d\udd04 Simulation 32/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 32 abgeschlossen.\n\n\ud83d\udd04 Simulation 33/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 33 abgeschlossen.\n\n\ud83d\udd04 Simulation 34/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 34 abgeschlossen.\n\n\ud83d\udd04 Simulation 35/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 35 abgeschlossen.\n\n\ud83d\udd04 Simulation 36/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 36 abgeschlossen.\n\n\ud83d\udd04 Simulation 37/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 37 abgeschlossen.\n\n\ud83d\udd04 Simulation 38/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 38 abgeschlossen.\n\n\ud83d\udd04 Simulation 39/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 39 abgeschlossen.\n\n\ud83d\udd04 Simulation 40/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 40 abgeschlossen.\n\n\ud83d\udd04 Simulation 41/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 41 abgeschlossen.\n\n\ud83d\udd04 Simulation 42/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 42 abgeschlossen.\n\n\ud83d\udd04 Simulation 43/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 43 abgeschlossen.\n\n\ud83d\udd04 Simulation 44/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 44 abgeschlossen.\n\n\ud83d\udd04 Simulation 45/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 45 abgeschlossen.\n\n\ud83d\udd04 Simulation 46/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 46 abgeschlossen.\n\n\ud83d\udd04 Simulation 47/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 47 abgeschlossen.\n\n\ud83d\udd04 Simulation 48/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 48 abgeschlossen.\n\n\ud83d\udd04 Simulation 49/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 49 abgeschlossen.\n\n\ud83d\udd04 Simulation 50/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 50 abgeschlossen.\n\n\ud83d\udd04 Simulation 51/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 51 abgeschlossen.\n\n\ud83d\udd04 Simulation 52/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 52 abgeschlossen.\n\n\ud83d\udd04 Simulation 53/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 53 abgeschlossen.\n\n\ud83d\udd04 Simulation 54/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 54 abgeschlossen.\n\n\ud83d\udd04 Simulation 55/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 55 abgeschlossen.\n\n\ud83d\udd04 Simulation 56/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 56 abgeschlossen.\n\n\ud83d\udd04 Simulation 57/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 57 abgeschlossen.\n\n\ud83d\udd04 Simulation 58/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 58 abgeschlossen.\n\n\ud83d\udd04 Simulation 59/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 59 abgeschlossen.\n\n\ud83d\udd04 Simulation 60/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 60 abgeschlossen.\n\n\ud83d\udd04 Simulation 61/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 61 abgeschlossen.\n\n\ud83d\udd04 Simulation 62/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 62 abgeschlossen.\n\n\ud83d\udd04 Simulation 63/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 63 abgeschlossen.\n\n\ud83d\udd04 Simulation 64/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 64 abgeschlossen.\n\n\ud83d\udd04 Simulation 65/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 65 abgeschlossen.\n\n\ud83d\udd04 Simulation 66/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 66 abgeschlossen.\n\n\ud83d\udd04 Simulation 67/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 67 abgeschlossen.\n\n\ud83d\udd04 Simulation 68/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 68 abgeschlossen.\n\n\ud83d\udd04 Simulation 69/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 69 abgeschlossen.\n\n\ud83d\udd04 Simulation 70/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 70 abgeschlossen.\n\n\ud83d\udd04 Simulation 71/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 71 abgeschlossen.\n\n\ud83d\udd04 Simulation 72/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 72 abgeschlossen.\n\n\ud83d\udd04 Simulation 73/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 73 abgeschlossen.\n\n\ud83d\udd04 Simulation 74/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 74 abgeschlossen.\n\n\ud83d\udd04 Simulation 75/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 75 abgeschlossen.\n\n\ud83d\udd04 Simulation 76/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 76 abgeschlossen.\n\n\ud83d\udd04 Simulation 77/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 77 abgeschlossen.\n\n\ud83d\udd04 Simulation 78/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 78 abgeschlossen.\n\n\ud83d\udd04 Simulation 79/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 79 abgeschlossen.\n\n\ud83d\udd04 Simulation 80/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 80 abgeschlossen.\n\n\ud83d\udd04 Simulation 81/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 81 abgeschlossen.\n\n\ud83d\udd04 Simulation 82/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 82 abgeschlossen.\n\n\ud83d\udd04 Simulation 83/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 83 abgeschlossen.\n\n\ud83d\udd04 Simulation 84/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 84 abgeschlossen.\n\n\ud83d\udd04 Simulation 85/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 85 abgeschlossen.\n\n\ud83d\udd04 Simulation 86/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 86 abgeschlossen.\n\n\ud83d\udd04 Simulation 87/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 87 abgeschlossen.\n\n\ud83d\udd04 Simulation 88/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 88 abgeschlossen.\n\n\ud83d\udd04 Simulation 89/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 89 abgeschlossen.\n\n\ud83d\udd04 Simulation 90/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 90 abgeschlossen.\n\n\ud83d\udd04 Simulation 91/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 91 abgeschlossen.\n\n\ud83d\udd04 Simulation 92/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 92 abgeschlossen.\n\n\ud83d\udd04 Simulation 93/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 93 abgeschlossen.\n\n\ud83d\udd04 Simulation 94/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 94 abgeschlossen.\n\n\ud83d\udd04 Simulation 95/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 95 abgeschlossen.\n\n\ud83d\udd04 Simulation 96/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 96 abgeschlossen.\n\n\ud83d\udd04 Simulation 97/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 97 abgeschlossen.\n\n\ud83d\udd04 Simulation 98/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 98 abgeschlossen.\n\n\ud83d\udd04 Simulation 99/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 99 abgeschlossen.\n\n\ud83d\udd04 Simulation 100/100 gestartet...\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\u2705 Simulation 100 abgeschlossen.\n\n\ud83c\udf89 Alle Simulationen abgeschlossen.\n"
+        }
+      ]
+    },
+    {
+      "id": "SFPL",
+      "code_hash": "eab99c13509d38df2b5d71724c68d957",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "BYtC",
+      "code_hash": "cd4bfe0d7047cfc6fd5ce3cc53aba188",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Optimization model:\nSimulation results:\n  Service Reliability (Proportion of APLs without overload): 0.8759\n  Demand Satisfaction Rate (Proportion of demand satisfied): 0.9895\n  Number of simulations: 100\n"
+        }
+      ]
+    }
+  ]
+}

@@ -66,8 +66,9 @@ def _(gpd, requests):
     except Exception as e:
         print(f"Fehler beim Snappen: {e}")
 
-
+    #-----------------------------
     # Load snapped APL coordinates
+    #-----------------------------
 
     apl_gdf = gpd.read_file("./Data/apl_candidates_clusters_snapped.geojson")
     apl_ids = apl_gdf["Gitter_ID_100m"].tolist()
@@ -84,18 +85,34 @@ def _(gpd, requests):
 
     # OSRM erwartet Koordinaten als LON,LAT → joinen mit ;
     coord_string = ";".join([f"{lon},{lat}" for lon, lat in apl_coords])
-    return apl_ids, coord_string, hub_coord_snapped
 
 
-@app.cell
-def _(hub_coord_snapped):
-    print(hub_coord_snapped)
-    return
+    #---------------------------------------
+    # Load snapped heuristic APL coordinates
+    #---------------------------------------
+
+    heuristic_gdf = gpd.read_file("./Data/heuristic_result_with_customers_snapped.geojson")
+    heuristic_ids = heuristic_gdf["Gitter_ID_100m"].tolist()
+    heuristic_coords = heuristic_gdf["coord_car"].tolist()
+
+    # Normalize coords and append Hub
+
+    heuristic_coords = normalize_coords(heuristic_coords)
+
+    heuristic_coords.append(hub_coord_snapped)
+    heuristic_ids.append(HUB_ID)
+
+    # OSRM erwartet Koordinaten als LON,LAT → joinen mit ;
+    coord_string_heuristic = ";".join([f"{lon_},{lat_}" for lon_, lat_ in heuristic_coords])
+    print(len(heuristic_ids))
+    print(heuristic_ids)
+    return apl_ids, coord_string, coord_string_heuristic, heuristic_ids
 
 
 @app.cell
 def _(apl_ids, coord_string, pd, requests):
     # Request an table-API senden
+
     url = f"http://localhost:5000/table/v1/driving/{coord_string}?annotations=distance"
 
     print("Sende Anfrage an OSRM für Distanzmatrix...")
@@ -114,6 +131,36 @@ def _(apl_ids, coord_string, pd, requests):
     df_dist.index.name = "from_apl"
 
     df_dist.to_csv("./Data/cvrp_distance_matrix.csv", sep=";")
+    print(f"Distanzmatrix gespeichert")
+    return
+
+
+@app.cell
+def _(coord_string_heuristic, heuristic_ids, pd, requests):
+    #----------------------------
+    # Heuristic
+    #----------------------------
+    # Request an table-API senden
+
+    url_h = f"http://localhost:5000/table/v1/driving/{coord_string_heuristic}?annotations=distance"
+
+    print("Sende Anfrage an OSRM für Distanzmatrix...")
+
+    try:
+        response_h = requests.get(url_h)
+        response_h.raise_for_status()
+        data_h = response_h.json()
+        distance_matrix_heuristic = data_h["distances"]
+    except Exception as e:
+        print(f"Fehler beim Abrufen der Distanzmatrix: {e}")
+        distance_matrix_heuristic = []
+
+    # Als DataFrame speichern
+    df_dist_h = pd.DataFrame(distance_matrix_heuristic, index=heuristic_ids, columns=[f"to_apl_{i}" for i in heuristic_ids])
+    df_dist_h.index.name = "from_apl"
+
+    df_dist_h.to_csv("./Data/cvrp_distance_matrix_heuristic.csv", sep=";")
+    print(df_dist_h.shape)
     print(f"Distanzmatrix gespeichert")
     return
 
