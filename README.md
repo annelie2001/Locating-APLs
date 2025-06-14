@@ -1,19 +1,10 @@
 # Locating Automated Parcel Lockers: A Simulation-Optimization Approach for the City of Würzburg
 
-This repository contains the full implementation of the simulation-optimization framework developed for the seminar thesis:
+## Research Context
 
-**Title**: Locating Automated Parcel Lockers: A Simulation-Optimization Approach for the City of Würzburg  
-**Author**: Annelie Friedl  
-**Year**: 2025  
-**Institution**: Lehrstuhl für Wirtschaftsinformatik und Business Analytics, Universität Würzburg
+This repository contains the full implementation of the simulation-optimization framework developed for my seminar paper in the master's program Information Systems at the Chair of Business Analytics, University of Würzburg. The central research question is how to efficiently allocate APLs in a way that minimizes setup and delivery costs while satisfying uncertain, spatially distributed demand under capacity constraints. To this end, I follow an adapted version of the integrated simulation-optimization approach proposed by [Rabe et al. (2020)]([url](http://dx.doi.org/10.1109/WSC48552.2020.9384087)).
 
-## Research Objectives and Procedure
-
-This study aims to develop and evaluate an optimization-based approach for determining
-suitable locations for APLs in urban areas. The central research question is how to efficiently
-allocate APLs in a way that minimizes setup and delivery costs while satisfying uncertain,
-spatially distributed demand under capacity constraints. To this end, I follow an adapted
-version of the integrated simulation-optimization approach proposed by Rabe et al. (2020):
+## Simulation-Optimization Framework
 
 - 📦 Simulating multi-period demand using a System Dynamics (SD) model
 - 📈 Generating stochastic demand scenarios based on the SD results
