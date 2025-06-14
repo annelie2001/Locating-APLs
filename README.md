@@ -26,13 +26,13 @@ sponding Capacitated Vehicle Routing Problem (CVRP)
 
 ## Repository Structure
 
-├── 1_Data Generation/ # Marimo notebooks for creating or preprocessing datasets (e.g. calculating driving distances, generating demand scenarios,...)
-├── 2_Optimization/ # Marimo notebooks for solving the CFLP and generating the heuristic solution
-├── 3_Evaluation/ # Marimo notebooks for the MCS and the CVRP
-├── Data/ # All used and generated datasets (e.g. population, demand, coordinates,...)
-├── Images/ # Image files created for documentation
-├── Vensim Model/ # Vensim model and simulation files
-├── project-overview.py # Marimo notebook containing interactive maps and graphs across all project steps
+├── 1_Data Generation/ # Marimo notebooks for creating or preprocessing datasets (e.g. calculating driving distances, generating demand scenarios,...)  
+├── 2_Optimization/ # Marimo notebooks for solving the CFLP and generating the heuristic solution  
+├── 3_Evaluation/ # Marimo notebooks for the MCS and the CVRP  
+├── Data/ # All used and generated datasets (e.g. population, demand, coordinates,...)  
+├── Images/ # Image files created for documentation  
+├── Vensim Model/ # Vensim model and simulation files  
+├── project-overview.py # Marimo notebook containing interactive maps and graphs across all project steps  
 
 ## Technologies Used
 
