@@ -178,3 +178,4 @@ Data/OSRM-Unterfranken/
 Data/Zensus_Bevoelkerung_100m-Gitter.csv
 Data/distances.npy
 venv-cplex/
+__marimo__/
