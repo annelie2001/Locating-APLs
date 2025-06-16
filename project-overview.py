@@ -1,8 +1,6 @@
-
-
 import marimo
 
-__generated_with = "0.13.2"
+__generated_with = "0.13.15"
 app = marimo.App(width="medium")
 
 
@@ -20,7 +18,24 @@ def _():
     import branca.colormap as cm
     import pysd
     import numpy as np
-    return Fullscreen, alt, cm, folium, gpd, json, mo, np, pd, pysd, requests
+    from dotenv import load_dotenv
+    from pathlib import Path
+    import os
+    return (
+        Fullscreen,
+        alt,
+        cm,
+        folium,
+        gpd,
+        json,
+        load_dotenv,
+        mo,
+        np,
+        os,
+        pd,
+        pysd,
+        requests,
+    )
 
 
 @app.cell
@@ -73,12 +88,13 @@ def _(gpd, np, pd, pysd):
 
 
 @app.cell
-def _(json, requests):
+def _(json, load_dotenv, os, requests):
     # DHL-Daten Würzburg
     latitude = 49.7913
     longitude = 9.9534
 
-    dhl_api_key='lsl7jeOhVdcGayp7IWypamqQ4a6DMYcO'
+    load_dotenv()
+    dhl_api_key = os.getenv("SECRET_KEY_DHL")
 
     url = 'https://api.dhl.com/location-finder/v1/find-by-geo'
     headers = {
