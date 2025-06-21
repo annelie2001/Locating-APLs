@@ -20,9 +20,11 @@ This repository contains the full implementation of the simulation-optimization 
 - 📁 Data - All used and generated datasets (e.g. population, demand, coordinates,...)  
 - 📁 Images - Image files created for documentation  
 - 📁 Vensim Model - Vensim model and simulation files  
-- 📄 project-overview.html - HTML file containing interactive maps and graphs across all project steps  
+- 📄 project-overview.py - Marimo notebook containing interactive maps and graphs across all project steps  
+
 
 ## Technologies Used
+(see requirements.txt)
 
 - Marimo – Used to build interactive notebooks for visualizing and analyzing results.
 - IBM ILOG CPLEX – Applied to solve the CFLP.

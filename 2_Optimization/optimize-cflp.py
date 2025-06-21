@@ -1,8 +1,6 @@
-
-
 import marimo
 
-__generated_with = "0.13.2"
+__generated_with = "0.13.15"
 app = marimo.App(width="medium")
 
 
@@ -30,7 +28,6 @@ def _(gpd, pd):
     # Population data Wuerzburg
     wuerzburg_gdf = gpd.read_file("./Data/wuerzburg_bevoelkerung_100m.geojson")
     wuerzburg_gdf_projected = wuerzburg_gdf.to_crs(epsg=25832)
-    # grid_cells = wuerzburg_gdf.loc[:, 'Gitter_ID_100m']
 
     wuerzburg_gdf_300m = gpd.read_file("./Data/wuerzburg_bevoelkerung_300m.geojson")
     wuerzburg_gdf_300m_projected = wuerzburg_gdf_300m.to_crs(epsg=25832)
@@ -165,11 +162,11 @@ def _(
 def _(model, pyo):
     # Objective Function
     def objective_rule(m):
-        # Verteilungskosten
+        # Delivery costs
         customer_distances = sum(m.c[i, j] * m.d[j, t] * m.x[i, j, t] 
                                  for (i, j) in m.ValidConnections for t in m.T)
 
-        # Setup-Kosten (nur beim ersten Eröffnen)
+        # Setup costs (for initial opening)
         setup_costs = sum(m.f[i, t] * (m.y[i, t] - (0 if t == 1 else m.y[i, t-1])) 
                           for i in m.I for t in m.T)
 
@@ -178,9 +175,9 @@ def _(model, pyo):
     model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
     # Constraints
-    # Jeder Kunde muss genau einem APL zugewiesen werden
+    # Each customer must be assigned to exactly one APL in each period
     def assignment_rule(m, j, t):
-        # Nur gültige Verbindungen berücksichtigen
+        # Only valid connections
         valid_apls = [i for i in m.I if (i, j) in m.ValidConnections]
         if not valid_apls:  
             return pyo.Constraint.Skip
@@ -188,7 +185,7 @@ def _(model, pyo):
 
     model.assignment = pyo.Constraint(model.J, model.T, rule=assignment_rule)
 
-    # APLs können nur einmal eröffnet werden
+    # APLs can't be closed again
     def non_decreasing_rule(m, i, t):
         if t == 1:
             return pyo.Constraint.Skip
@@ -196,7 +193,7 @@ def _(model, pyo):
 
     model.non_decreasing = pyo.Constraint(model.I, model.T, rule=non_decreasing_rule)
 
-    # Kapazitätsbeschränkung für jeden APL
+    # Capacity constraint; Demand can only be assigned to opened APLs
     def capacity_rule(m, i, t):
             assigned_demand = sum(m.d[j, t] * m.x[i, j, t]
                                   for j in m.J if (i, j) in m.ValidConnections)
@@ -204,7 +201,7 @@ def _(model, pyo):
 
     model.Capacity = pyo.Constraint(model.I, model.T, rule=capacity_rule)
 
-    # Minimale Auslastung für alle APLs zusammen
+    # Minimum utilization constraint (set to 0, otherwise infeasible)
     def min_utilization_rule(m, i, t):
         assigned_demand = sum(m.x[i, j, t] * m.d[j, t] for j in m.J if (i, j) in m.ValidConnections)
         min_demand_required = m.m * m.a * m.y[i, t]
@@ -223,7 +220,7 @@ def _(mo):
 @app.cell
 def _(model, pd, pyo, value):
     solver = pyo.SolverFactory('cplex')
-    # Setze Abbruchkriterien
+    # Termination criteria
     solver.options['timelimit'] = 600
 
     results = solver.solve(model, tee=True)
@@ -233,36 +230,36 @@ def _(model, pd, pyo, value):
     else:
         print("Solver did not find an optimal solution. Termination condition:", results.solver.termination_condition)
 
-    # 1. Extrahiere x-Variablen (Zuweisungen)
+    # 1. Extract x-variables
     x_data = []
     for (i, j, t) in model.x:
         x_val = value(model.x[i, j, t])
-        if x_val > 1e-6:  # Nur wenn APL i dem Kunden j in Periode t zugewiesen ist
+        if x_val > 1e-6:  
             x_data.append({"APL_ID": i, "Customer_ID": j, "Period": t})
     df_x = pd.DataFrame(x_data)
 
-    # 2. Extrahiere y-Variablen (APL geöffnet)
+    # 2. Extract y-variables
     y_data = []
     for (i, t) in model.y:
         y_val = value(model.y[i, t])
-        # Setup-Kosten nur, wenn APL i in t neu geöffnet wird
+        # Setup costs only if APL is opened in period t
         y_prev = value(model.y[i, t - 1]) if t > 1 else 0
         was_opened = y_val - y_prev
         setup_cost = value(model.f[i, t]) * was_opened if was_opened > 0.5 else 0
         y_data.append({"APL_ID": i, "Period": t, "y": y_val, "SetupCost": setup_cost})
     df_y = pd.DataFrame(y_data)
 
-    # 3. Merge x und y
+    # 3. Merge x and y
     df_combined = df_x.merge(df_y, on=["APL_ID", "Period"], how="left")
 
-    # 4. Demand-Spalte
+    # 4. Demand column
     df_combined["Demand"] = df_combined.apply(lambda row: value(model.d[row["Customer_ID"], row["Period"]]), axis=1)
 
 
-    # 5. Sortieren nach Zeit, dann APL
+    # 5. Sort by period and APL
     df_combined = df_combined.sort_values(by=["Period", "APL_ID"]).reset_index(drop=True)
 
-    # 6. Export als CSV
+    # 6. Export as CSV
     df_combined.to_csv("./Data/combined_results_with_setup_costs.csv", index=False, sep=";")
     print("Results saved to 'combined_results_with_setup_costs.csv'.")
     df_combined
@@ -280,7 +277,7 @@ def _(pd, pyo):
             opened_periods = []
             total_setup_costs = 0
             supplied_customers = set()
-            prev_y = 0  # Anfangswert (kein APL aktiv)
+            prev_y = 0 
 
             for t in model.T:
                 current_y = int(round(pyo.value(model.y[i, t])))
@@ -288,7 +285,7 @@ def _(pd, pyo):
                     newly_opened = current_y - prev_y
                     opened_periods.append((t, newly_opened))
                     total_setup_costs += newly_opened * pyo.value(model.f[i, t])
-                prev_y = current_y  # merken für nächste Periode
+                prev_y = current_y
 
             if prev_y > 0:
                 for j in model.J:
@@ -296,14 +293,14 @@ def _(pd, pyo):
                         if any(pyo.value(model.x[i, j, t]) > 0.5 for t in model.T):
                             supplied_customers.add(j)
 
-                #Summe der Nachfrage über alle Kunden und Perioden
+                #Sum of demand over all customers and periods
                 total_demand_per_apl = sum(
                     sum(pyo.value(model.d[j, t]) * pyo.value(model.x[i, j, t]) for j in supplied_customers) for t in model.T
                 )
-                # Auslastung pro Periode berechnen
+                # Utilization per period
                 underutilized_count = 0
                 for t in model.T:
-                    # Summe der Nachfrage über alle Kunden für die jeweilige Periode
+                    # Sum of demand over all customer for specific period 
                     total_demand = sum(
                         pyo.value(model.d[j, t]) for j in supplied_customers
                     )
@@ -315,7 +312,7 @@ def _(pd, pyo):
 
                 results.append({
                     "APL_ID": i,
-                    "Opened_Periods": str(opened_periods),  # z.B. [(1, 1), (3, 1)]
+                    "Opened_Periods": str(opened_periods),
                     "Total_APLs_Opened": prev_y,
                     "Total_Setup_Costs": total_setup_costs,
                     "Supplied_Customers": ",".join(sorted(supplied_customers)),

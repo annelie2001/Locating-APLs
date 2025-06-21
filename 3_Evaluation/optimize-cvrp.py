@@ -1,8 +1,6 @@
-
-
 import marimo
 
-__generated_with = "0.13.2"
+__generated_with = "0.13.15"
 app = marimo.App(width="medium")
 
 
@@ -17,14 +15,13 @@ def _():
 
 @app.cell
 def _(pd):
-    # === Daten einlesen ===
+    # Read data
 
     df_dist = pd.read_csv("./Data/cvrp_distance_matrix.csv", index_col=0, sep=";")
     df_dist.columns = df_dist.columns.str.replace(r"^to_apl_", "", regex=True)
     df_dist.index = df_dist.index.str.replace(r"^to_apl_", "", regex=True)
     hub_id = df_dist.index[-1]
 
-    # Bedarfe laden und nur aktive APLs behalten
     df_apl = pd.read_csv("./Data/cflp_apl_deployment_summary.csv", sep=";")
     return df_apl, df_dist, hub_id
 
@@ -36,7 +33,7 @@ def _(
     expand_distance_matrix,
     process_apl_data_with_splitting,
 ):
-    # === Parameter ===
+    # Parameter
 
     vehicle_capacity = 250
     num_vehicles = 15
@@ -63,44 +60,43 @@ def _(
 
 @app.cell
 def _(daily_demand, num_vehicles, vehicle_capacity):
-    # === DEBUGGING: Kapazitäts-Analyse ===
+    # DEBUGGING: Capacity analysis
 
-    print("\n=== KAPAZITÄTS-ANALYSE ===")
+    print("\n=== CAPACITY ANALYSIS ===")
     print(f"Demands: {daily_demand}")
-    print(f"Anzahl Knoten (inkl. Hub): {len(daily_demand)}")
-    print(f"Gesamtbedarf: {sum(daily_demand)}")
-    print(f"Fahrzeugkapazität: {vehicle_capacity}")
-    print(f"Anzahl Fahrzeuge: {num_vehicles}")
-    print(f"Gesamtkapazität: {vehicle_capacity * num_vehicles}")
-    print(f"Kapazität ausreichend: {sum(daily_demand) <= vehicle_capacity * num_vehicles}")
+    print(f"Number of nodes (incl. hub): {len(daily_demand)}")
+    print(f"Total demand: {sum(daily_demand)}")
+    print(f"Vehicle capacity: {vehicle_capacity}")
+    print(f"Number of vehicles: {num_vehicles}")
+    print(f"Total capacity: {vehicle_capacity * num_vehicles}")
+    print(f"Sufficient capacity: {sum(daily_demand) <= vehicle_capacity * num_vehicles}")
 
-    # Überprüfe einzelne Bedarfe vs. Kapazität
     oversized_demands = [i for i, d in enumerate(daily_demand) if d > vehicle_capacity]
     if oversized_demands:
-        print(f"WARNUNG: Bedarfe größer als Fahrzeugkapazität bei Knoten: {oversized_demands}")
+        print(f"WARNING: Demands greater than vehicle capacity at nodes: {oversized_demands}")
         for idx in oversized_demands:
-            print(f"  Knoten {idx}: Bedarf {daily_demand[idx]} > Kapazität {vehicle_capacity}")
+            print(f"Node {idx}: demand {daily_demand[idx]} > capacity {vehicle_capacity}")
     return
 
 
 @app.cell
 def _(pd):
-    # Split nodes with multiple APLs
+    # Split nodes with multiple APLs (necessary because of capacity constraints)
 
     def process_apl_data_with_splitting(df_apl):
 
             print(f"Original APLs: {len(df_apl)}")
 
-            # Finde APLs mit mehrfachen Öffnungen
+            # Find APL locations with multiple setups
             multi_apls = df_apl[df_apl['Total_APLs_Opened'] > 1]
             if len(multi_apls) > 0:
-                print(f"APLs mit mehrfachen Öffnungen: {len(multi_apls)}")
+                print(f"APLs with multiple openings: {len(multi_apls)}")
                 for _, row in multi_apls.iterrows():
-                    print(f"  {row['APL_ID']}: {row['Total_APLs_Opened']} Öffnungen, Bedarf: {row['Average_Demand']}")
+                    print(f"  {row['APL_ID']}: {row['Total_APLs_Opened']} Openings, Deamand: {row['Average_Demand']}")
             else:
-                print("Keine APLs mit mehrfachen Öffnungen gefunden")
+                print("No APLs with multiple openings found")
 
-            # Erweiterte APL-Liste erstellen
+            # Create expanded APL list
             expanded_apls = []
 
             for _, row in df_apl.iterrows():
@@ -109,7 +105,7 @@ def _(pd):
                 avg_demand = row['Average_Demand']
 
                 if total_opened == 1:
-                    # Standard APL - keine Änderung
+                    # Standard APL, no changes
                     expanded_apls.append({
                         'APL_ID': apl_id,
                         'Original_APL_ID': apl_id,
@@ -119,7 +115,7 @@ def _(pd):
                         'Original_Demand': avg_demand
                     })
                 else:
-                    # APL aufteilen
+                    # Split APL
                     demand_per_part = avg_demand / total_opened
 
                     for part in range(total_opened):
@@ -134,7 +130,7 @@ def _(pd):
 
             df_expanded = pd.DataFrame(expanded_apls)
 
-            print(f"Erweiterte APLs: {len(df_expanded)}")
+            print(f"Expanded APLs: {len(df_expanded)}")
 
             return df_expanded, df_apl
     return (process_apl_data_with_splitting,)
@@ -144,9 +140,9 @@ def _(pd):
 def _(hub_id, pd):
     def expand_distance_matrix(df_expanded, df_dist):
         """
-        Erweitert die Distance Matrix um die aufgeteilten APLs
+        Expands the distance matrix by the split APLs
         """    
-        # Mapping von Original APL IDs zu neuen APL IDs
+        # Mapping from original ID to new APL IDs
         original_to_new = {}
         for _, row in df_expanded.iterrows():
             orig_id = row['Original_APL_ID']
@@ -156,7 +152,7 @@ def _(hub_id, pd):
                 original_to_new[orig_id] = []
             original_to_new[orig_id].append(new_id)
 
-        # Neue Distance Matrix erstellen
+        # Create new distance matrix
         new_apl_ids = df_expanded['APL_ID'].tolist()
         all_ids = [hub_id] + new_apl_ids
 
@@ -166,7 +162,7 @@ def _(hub_id, pd):
             dtype=float
         )
 
-        # Distance Matrix erweitern
+        # Expand distance matrix
         for i, id1 in enumerate(all_ids):
             for j, id2 in enumerate(all_ids):
 
@@ -174,23 +170,23 @@ def _(hub_id, pd):
                     new_distance_matrix.loc[id1, id2] = 0
                     continue
 
-                # Original IDs bestimmen
+                # Determine original IDs
                 orig_id1 = id1 if id1 == hub_id else df_expanded[df_expanded['APL_ID'] == id1]['Original_APL_ID'].iloc[0]
                 orig_id2 = id2 if id2 == hub_id else df_expanded[df_expanded['APL_ID'] == id2]['Original_APL_ID'].iloc[0]
 
-                # Distanz zwischen Teilen derselben APL = 0
+                # Distance between APLs at the same location = 0
                 if orig_id1 == orig_id2 and id1 != id2:
                     new_distance_matrix.loc[id1, id2] = 0
                 else:
-                    # Original Distanz verwenden
+                    # Use original distance
                     if orig_id1 in df_dist.index and orig_id2 in df_dist.columns:
                         new_distance_matrix.loc[id1, id2] = df_dist.loc[orig_id1, orig_id2]
                     else:
-                        print(f"Warnung: Distanz für {orig_id1} -> {orig_id2} nicht gefunden")
-                        new_distance_matrix.loc[id1, id2] = 999999  # Sehr hohe Distanz als Fallback
+                        print(f"Warning: Distance for {orig_id1} -> {orig_id2} not found")
+                        new_distance_matrix.loc[id1, id2] = 999999  # Very big distance as fallback
 
-        print(f"Neue Distance Matrix: {new_distance_matrix.shape}")
-        print(f"APLs mit Distanz 0 zu sich selbst (aufgeteilte Teile): {(new_distance_matrix == 0).sum().sum() - len(all_ids)}")
+        print(f"New distance matrix: {new_distance_matrix.shape}")
+        print(f"APLs with distance 0 to each other (split APL): {(new_distance_matrix == 0).sum().sum() - len(all_ids)}")
 
         return new_distance_matrix, original_to_new
 
@@ -206,7 +202,7 @@ def _(
     pywrapcp,
     vehicle_capacity,
 ):
-    # === Routing-Modell aufbauen ===
+    # Build Routing-Modell
 
     def create_data_model():
         return {
@@ -232,7 +228,7 @@ def _(
     transit_callback_index = routing.RegisterTransitCallback(distance_callback)
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
-    # Kapazitätsbeschränkungen
+    # Capacity constraints
     def demand_callback(from_index):
         from_node = manager.IndexToNode(from_index)
         return data['demands'][from_node]
@@ -251,7 +247,7 @@ def _(
 
 @app.cell
 def _(pywrapcp, routing, routing_enums_pb2):
-    # Lösungsstrategie festlegen
+    # Define search strategy
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
     search_parameters.log_search = True
 
@@ -263,14 +259,14 @@ def _(pywrapcp, routing, routing_enums_pb2):
     search_parameters.time_limit.seconds = 10  
     search_parameters.solution_limit = 10
 
-    # Lösung berechnen
+    # Start search
     solution = routing.SolveWithParameters(search_parameters)
     return (solution,)
 
 
 @app.cell
 def _(apl_ids):
-    # === Ergebnisse auslesen ===
+    # Read results
     def get_routes(data, manager, routing, solution):
         routes = []
         total_distance = 0
@@ -284,22 +280,20 @@ def _(apl_ids):
             while not routing.IsEnd(index):
                 node_index = manager.IndexToNode(index)
                 route_load += data['demands'][node_index]
-                # route.append(node_index)
                 if node_index == 0:
-                    route.append("Hub")  # Knoten 0 ist der Hub
+                    route.append("Hub") # node 0 is the hub
                     plan_output += " Hub ->"
                 else:
-                    route.append(apl_ids[node_index - 1])  # APL_ID für andere Knoten
+                    route.append(apl_ids[node_index - 1])  # APL_ID for other nodes
                     plan_output += f' {apl_ids[node_index - 1]} (load: {route_load}) ->'
                 previous_index = index
                 index = solution.Value(routing.NextVar(index))
                 route_distance += routing.GetArcCostForVehicle(previous_index, index, vehicle_id)
             node_index = manager.IndexToNode(index)
-            # route.append(node_index)
             if node_index == 0:
-                route.append("Hub")  # Knoten 0 ist der Hub
+                route.append("Hub")
             else:
-                route.append(apl_ids[node_index - 1])  # APL_ID für andere Knoten
+                route.append(apl_ids[node_index - 1])
             routes.append(route)
             plan_output += " Hub \n"
             plan_output += f'Distance: {route_distance}m, Load: {route_load}\n'
@@ -317,7 +311,7 @@ def _(data, get_routes, manager, pd, routing, solution):
     if solution:
         routes = get_routes(data, manager, routing, solution)
     else:
-        print("Keine Lösung gefunden.")
+        print("No solution found.")
 
     # Save routes
 
@@ -338,7 +332,7 @@ def _(
     routing_enums_pb2,
     vehicle_capacity,
 ):
-    # === Daten einlesen (Heuristik) ===
+    # Read data (Heuristic)
     df_dist_h = pd.read_csv("./Data/cvrp_distance_matrix_heuristic.csv", index_col=0, sep=";")
     df_dist_h.columns = df_dist_h.columns.str.replace(r"^to_apl_", "", regex=True)
     df_dist_h.index = df_dist_h.index.str.replace(r"^to_apl_", "", regex=True)
@@ -350,7 +344,7 @@ def _(
     daily_demand_h = [0] + [100] * len(apl_ids_h)
     distance_matrix_h = df_dist_h.values.astype(int)
 
-    # === DEBUGGING: Kapazitäts-Analyse (Heuristik) ===
+    # DEBUGGING: Capacity analysis
     print("\n=== KAPAZITÄTS-ANALYSE (Heuristik) ===")
     print(f"Demands (Heuristik): {daily_demand_h}")
     print(f"Anzahl Knoten (inkl. Hub) (Heuristik): {len(daily_demand_h)}")
@@ -360,14 +354,14 @@ def _(
     print(f"Gesamtkapazität: {vehicle_capacity * num_vehicles}")
     print(f"Kapazität ausreichend: {sum(daily_demand_h) <= vehicle_capacity * num_vehicles}")
 
-    # Überprüfe einzelne Bedarfe vs. Kapazität (Heuristik)
+    # Check demand vs. capacities (Heuristic) 
     oversized_demands_h = [i for i, d in enumerate(daily_demand_h) if d > vehicle_capacity]
     if oversized_demands_h:
-        print(f"WARNUNG: Bedarfe größer als Fahrzeugkapazität bei Knoten (Heuristik): {oversized_demands_h}")
+        print(f"Warning: Demand exceeds vehicle capacity for node: {oversized_demands_h}")
         for idh in oversized_demands_h:
-            print(f"  Knoten {idh}: Bedarf {daily_demand_h[idh]} > Kapazität {vehicle_capacity}")
+            print(f"  Node {idh}: Demand {daily_demand_h[idh]} > Capacity {vehicle_capacity}")
 
-    # === Routing-Modell aufbauen (Heuristik) ===
+    # Build Routing Model (Heuristic)
     def create_data_model_h():
         return {
             'distance_matrix': distance_matrix_h.tolist(),
@@ -392,7 +386,7 @@ def _(
     transit_callback_index_h = routing_h.RegisterTransitCallback(distance_callback_h)
     routing_h.SetArcCostEvaluatorOfAllVehicles(transit_callback_index_h)
 
-    # Kapazitätsbeschränkungen (Heuristik)
+    # Capacity constraints (Heuristic)
     def demand_callback_h(from_index):
         from_node = manager_h.IndexToNode(from_index)
         return data_h['demands'][from_node]
@@ -400,13 +394,13 @@ def _(
     demand_callback_index_h = routing_h.RegisterUnaryTransitCallback(demand_callback_h)
     routing_h.AddDimensionWithVehicleCapacity(
         demand_callback_index_h,
-        0,  # Null Kapazitäts-Spielraum
+        0,  # Zero capacity margin
         data_h['vehicle_capacities'],
         True,
         'Capacity'
     )
 
-    # Lösungsstrategie festlegen (Heuristik)
+    # Define search strategy (Heuristic)
     search_parameters_h = pywrapcp.DefaultRoutingSearchParameters()
     search_parameters_h.log_search = True
 
@@ -418,10 +412,10 @@ def _(
     search_parameters_h.time_limit.seconds = 10
     search_parameters_h.solution_limit = 10
 
-    # Lösung berechnen (Heuristik)
+    # Start search (Heuristic)
     solution_h = routing_h.SolveWithParameters(search_parameters_h)
 
-    # === Ergebnisse auslesen (Heuristik) ===
+    # Read solutions (Heuristic)
     def get_routes_h(data, manager, routing, solution):
         routes = []
         total_distance = 0
@@ -436,19 +430,19 @@ def _(
                 node_index = manager_h.IndexToNode(index)
                 route_load += data['demands'][node_index]
                 if node_index == 0:
-                    route.append("Hub")  # Knoten 0 ist der Hub
+                    route.append("Hub")
                     plan_output += " Hub ->"
                 else:
-                    route.append(apl_ids_h[node_index - 1])  # APL_ID für andere Knoten
+                    route.append(apl_ids_h[node_index - 1]) 
                     plan_output += f' {apl_ids_h[node_index - 1]} (load: {route_load}) ->'
                 previous_index = index
                 index = solution.Value(routing.NextVar(index))
                 route_distance += routing.GetArcCostForVehicle(previous_index, index, vehicle_id)
             node_index = manager_h.IndexToNode(index)
             if node_index == 0:
-                route.append("Hub")  # Knoten 0 ist der Hub
+                route.append("Hub")
             else:
-                route.append(apl_ids_h[node_index - 1])  # APL_ID für andere Knoten
+                route.append(apl_ids_h[node_index - 1])
             routes.append(route)
             plan_output += " Hub \n"
             plan_output += f'Distance: {route_distance}m, Load: {route_load}\n'
@@ -464,7 +458,7 @@ def _(
     else:
         print("Keine Lösung gefunden (Heuristik).")
 
-    # Save routes (Heuristik)
+    # Save routes (Heuristic)
     if solution_h:
         max_len_h = max(len(route) for route in routes_h)
         padded_routes_h = [route + [''] * (max_len_h - len(route)) for route in routes_h]

@@ -1,8 +1,6 @@
-
-
 import marimo
 
-__generated_with = "0.13.2"
+__generated_with = "0.13.15"
 app = marimo.App(width="medium")
 
 
@@ -35,7 +33,7 @@ def _(gpd):
 def _(anzahl, mindestabstand_zellen, pd, wuerzburg_gdf):
     gdf_sorted = wuerzburg_gdf.sort_values(by="Einwohner", ascending=False).copy()
 
-    # Raster-Koordinaten berechnen (z. B. Gitterpositionen in "Zellen")
+    # Calculate grid-coordinates
     gdf_sorted['row'] = ((gdf_sorted['y_mp_100m'] - gdf_sorted['y_mp_100m'].min()) / 100).astype(int)
     gdf_sorted['col'] = ((gdf_sorted['x_mp_100m'] - gdf_sorted['x_mp_100m'].min()) / 100).astype(int)
 
@@ -45,7 +43,7 @@ def _(anzahl, mindestabstand_zellen, pd, wuerzburg_gdf):
     for _, row in gdf_sorted.iterrows():
         r, c = row['row'], row['col']
 
-        # Prüfen, ob zu nah an bestehenden
+        # Check distance to other APLs
         too_close = any(
             abs(r - br) <= mindestabstand_zellen and abs(c - bc) <= mindestabstand_zellen
             for br, bc in belegte_zellen
@@ -73,19 +71,19 @@ def _(
     wuerzburg_gdf,
     wuerzburg_gdf_300m,
 ):
-    # Vorbereitung: KDTree für die APL-Standorte erstellen
+    # Preparation: Create KDTree for the APL locations
     apl_coords = apl_locations_heuristic[['x_mp_100m', 'y_mp_100m']].values
     customer_coords = wuerzburg_gdf_300m[['x_300m', 'y_300m']].values
 
     kdtree = cKDTree(apl_coords)
 
-    # Zuordnung: Jeder Kunde wird der nächstgelegenen APL zugeordnet
+    # Assignment: Each customer is assigned to the nearest APL
     distances, indices = kdtree.query(customer_coords)
 
-    # Initialisiere eine Liste für nicht bediente Kunden
+    # List or unserved customers
     unserviced_customer_cells = []
 
-    # Erstelle eine neue Spalte 'APL_ID_Heuristic' in wuerzburg_gdf_300m
+    # Create a new column 'APL_ID_Heuristic' in wuerzburg_gdf_300m
     apl_ids = []
     for i, distance in enumerate(distances):
         if distance <= max_distanz_zellen:
@@ -93,7 +91,7 @@ def _(
             apl_id = apl_locations_heuristic.iloc[apl_index]['Gitter_ID_100m']
             apl_ids.append(apl_id)
         else:
-            apl_ids.append(None)  # Oder einen anderen geeigneten Wert, z.B. -1
+            apl_ids.append(None) 
             unserviced_customer_cells.append(wuerzburg_gdf_300m.iloc[i]['Gitter_ID_100m'])
 
     wuerzburg_gdf_300m['APL_ID_Heuristic'] = apl_ids
@@ -103,47 +101,46 @@ def _(
         len(unserviced_customer_cells),
     )
 
-    # 1. Erstelle eine Liste der APL-IDs und zugehörigen Geometrien aus apl_locations_heuristic
+    # 1. Create a list of APL IDs and associated geometries from apl_locations_heuristic
     apl_geometries = apl_locations_heuristic[["Gitter_ID_100m", "geometry"]].copy()
     apl_geometries = apl_geometries.set_index("Gitter_ID_100m")
 
-    # 2. Initialisiere ein Dictionary, um die Zuordnung von APL-ID zu Kundenzellen zu speichern
+    # 2. Store the assignment of APL ID to customer cells in a dictionary
     apl_to_customer_cells = {apl_id: [] for apl_id in apl_geometries.index}
 
-    # Iteriere über die Zeilen von wuerzburg_gdf_300m, um die Zuordnung zu erstellen
     for _, row_ in wuerzburg_gdf_300m.iterrows():
         apl_id = row_["APL_ID_Heuristic"]
         customer_id = row_["Gitter_ID_100m"]
         if apl_id is not None:
             apl_to_customer_cells[apl_id].append(customer_id)
 
-    # 3. Füge die Liste der zugeordneten Kundenzellen als neue Spalte zu apl_geometries hinzu
+    # 3. Add the list of assigned customer cells as a new column to apl_geometries
     apl_geometries["zugeordnete_kundenzellen"] = apl_geometries.index.map(
         lambda apl_id: apl_to_customer_cells.get(apl_id, [])
     )
 
-    # 4. Erstelle ein GeoDataFrame aus diesen Daten.
+    # 4. Creat GeoDataFrame
     apl_geometries_gdf = gpd.GeoDataFrame(apl_geometries, geometry="geometry", crs=wuerzburg_gdf.crs)
     apl_geometries_gdf = apl_geometries_gdf.reset_index()
 
-    # 5. Speichere das GeoDataFrame als GeoJSON.
+    # 5. Save as GeoJSON.
     apl_geometries_gdf.to_file("./Data/heuristic_result_with_customers.geojson", driver="GeoJSON")
 
-    print("GeoJSON Datei erfolgreich gespeichert: ./Data/apl_locations_with_customers.geojson")
+    print("GeoJSON successfully saved to: ./Data/apl_locations_with_customers.geojson")
 
-    # Erstelle eine Liste von Tupeln (APL_ID, Customer_ID) für die CSV-Datei
+    # Create a list of tuples (APL_ID, Customer_ID)
     apl_customer_list = []
     for apl_id, customer_ids in apl_to_customer_cells.items():
         for customer_id in customer_ids:
             apl_customer_list.append((apl_id, customer_id))
 
-    # Erstelle ein DataFrame aus der Liste
+    # Create a DataFrame
     apl_customer_df = pd.DataFrame(apl_customer_list, columns=["APL_ID", "Customer_ID"])
 
-    # Speichere das DataFrame als CSV-Datei
+    # Save as CSV
     apl_customer_df.to_csv("./Data/apl_customer_mapping_heuristic.csv", index=False, sep=";")
 
-    print("CSV Datei erfolgreich gespeichert: ./Data/apl_customer_mapping_heuristic.csv")
+    print("CSV successfully saved to:  ./Data/apl_customer_mapping_heuristic.csv")
     return
 
 

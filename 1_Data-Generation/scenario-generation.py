@@ -1,8 +1,6 @@
-
-
 import marimo
 
-__generated_with = "0.13.2"
+__generated_with = "0.13.15"
 app = marimo.App(width="medium")
 
 
@@ -32,32 +30,31 @@ def _(simulation_results):
 
 @app.cell
 def _(demand_series, np, pd):
-    # Szenario-Anzahl und Parameter
+    # Parameter
     num_scenarios = 20
     num_periods = 10
     delta = 0.01
 
-    # Faktoren zur Skalierung der Nachfrage je Szenario (linear von pessimistisch bis optimistisch)
-    scenario_factors = np.linspace(0.9, 1.1, num_scenarios)  # z.B. 80% bis 120% des Basiswerts
+    # Factors for scaling demand per scenario (linear from pessimistic to optimistic)
+    scenario_factors = np.linspace(0.9, 1.1, num_scenarios) 
 
-    # 5. Matrix vorbereiten
+    # Prepare matrix
     scenarios = np.zeros((num_periods, num_scenarios))
 
-    # 6. Szenarien generieren
+    # Generate scenarios
     for s_idx, factor in enumerate(scenario_factors):
         for t in range(1, num_periods + 1):
-            mu = factor * demand_series[t - 1]  # Nachfrage angepasst durch Szenariofaktor
-            # sigma = delta / np.log(t + 1) * t * mu   # Dämpfung
-            sigma = delta * t * mu  # Unsicherheit steigt mit der Zeit
+            mu = factor * demand_series[t - 1]
+            sigma = delta * t * mu  # Higher uncertainty in later periods
             scenarios[t - 1, s_idx] = int(np.random.normal(loc=mu, scale=sigma))
 
-    # 7. DataFrame mit Szenarien (jeder Reihe = ein Szenario)
+    # Scenario DataFrame
     scenario_df = pd.DataFrame(scenarios,
                                columns=[f"Scenario{i+1}" for i in range(num_scenarios)])
 
-    # 8. Speichern
+    # 8. Save
     scenario_df.to_csv("./Data/generated_scenarios.csv", sep=";", decimal='.', index=False)
-    print("Szenarien generiert und in 'generated_scenarios.csv' gespeichert.")
+    print("Generated scenarios and saved to 'generated_scenarios.csv'.")
     return
 
 

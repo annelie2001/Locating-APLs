@@ -1,7 +1,7 @@
 {
   "version": "1",
   "metadata": {
-    "marimo_version": "0.13.2"
+    "marimo_version": "0.13.15"
   },
   "cells": [
     {
@@ -15,22 +15,11 @@
           }
         }
       ],
-      "console": [
-        {
-          "type": "stream",
-          "name": "stdout",
-          "text": "load C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\zlib1.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\abseil_dll.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\utf8_validity.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\re2.dll...\n"
-        },
-        {
-          "type": "stream",
-          "name": "stdout",
-          "text": "load C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\libprotobuf.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\highs.dll...\nload C:\\Users\\annel\\Documents\\Locating-APLs\\venv-cplex\\lib\\site-packages\\ortools\\.libs\\ortools.dll...\n"
-        }
-      ]
+      "console": []
     },
     {
       "id": "MJUe",
-      "code_hash": "e83b0f4e48ddb27eba4b4718d5b40e8b",
+      "code_hash": "4c7c717d01598f98da12a3dd4c5189c5",
       "outputs": [
         {
           "type": "data",
@@ -43,7 +32,7 @@
     },
     {
       "id": "vblA",
-      "code_hash": "53799c7f6f0fb3de2596b639076d34df",
+      "code_hash": "3e23700ae134c2d8c56f7d5400d322dc",
       "outputs": [
         {
           "type": "data",
@@ -56,18 +45,23 @@
         {
           "type": "stream",
           "name": "stdout",
-          "text": "Original APLs: 39\nKeine APLs mit mehrfachen \u00d6ffnungen gefunden\nErweiterte APLs: 39\n"
+          "text": "Original APLs: 39\nNo APLs with multiple openings found\n"
         },
         {
           "type": "stream",
           "name": "stdout",
-          "text": "Neue Distance Matrix: (40, 40)\nAPLs mit Distanz 0 zu sich selbst (aufgeteilte Teile): 0\n"
+          "text": "Expanded APLs: 39\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "New distance matrix: (40, 40)\nAPLs with distance 0 to each other (split APL): 0\n"
         }
       ]
     },
     {
       "id": "bkHC",
-      "code_hash": "294b4142ec4d5f911192cf67825727ce",
+      "code_hash": "2f471cce71a66234c2f67935fc0baa49",
       "outputs": [
         {
           "type": "data",
@@ -80,13 +74,13 @@
         {
           "type": "stream",
           "name": "stdout",
-          "text": "\n=== KAPAZIT\u00c4TS-ANALYSE ===\nDemands: [0, 130, 127, 130, 61, 29, 87, 125, 114, 129, 126, 129, 120, 121, 51, 101, 63, 113, 61, 118, 79, 116, 14, 74, 103, 86, 30, 0, 76, 81, 99, 90, 85, 84, 64, 90, 69, 23, 110, 96]\nAnzahl Knoten (inkl. Hub): 40\nGesamtbedarf: 3404\nFahrzeugkapazit\u00e4t: 250\nAnzahl Fahrzeuge: 15\nGesamtkapazit\u00e4t: 3750\nKapazit\u00e4t ausreichend: True\n"
+          "text": "\n=== CAPACITY ANALYSIS ===\nDemands: [0, 130, 127, 130, 61, 29, 87, 125, 114, 129, 126, 129, 120, 121, 51, 101, 63, 113, 61, 118, 79, 116, 14, 74, 103, 86, 30, 0, 76, 81, 99, 90, 85, 84, 64, 90, 69, 23, 110, 96]\nNumber of nodes (incl. hub): 40\nTotal demand: 3404\nVehicle capacity: 250\nNumber of vehicles: 15\nTotal capacity: 3750\nSufficient capacity: True\n"
         }
       ]
     },
     {
       "id": "lEQa",
-      "code_hash": "027df9200ea39d5c9925637d7af37834",
+      "code_hash": "b6a47fb46680e00793f253fa985b2055",
       "outputs": [
         {
           "type": "data",
@@ -99,7 +93,7 @@
     },
     {
       "id": "PKri",
-      "code_hash": "876d397ca2651af97e6fae8ed577de5b",
+      "code_hash": "cd37ad1a617b645087dae46d8f128934",
       "outputs": [
         {
           "type": "data",
@@ -112,7 +106,7 @@
     },
     {
       "id": "Xref",
-      "code_hash": "64a5ac764146d256c8e26848dea0f249",
+      "code_hash": "b59be7cf42476f83f12b30630b55bc76",
       "outputs": [
         {
           "type": "data",
@@ -125,7 +119,7 @@
     },
     {
       "id": "SFPL",
-      "code_hash": "e15f50cf302bb280e7cf29e8d14dcd4d",
+      "code_hash": "50aaba45d050a7fca4f2374d4b9e67c7",
       "outputs": [
         {
           "type": "data",
@@ -138,13 +132,13 @@
         {
           "type": "stream",
           "name": "stderr",
-          "text": "I0000 00:00:1749713979.450480   11016 search.cc:308] Start search (memory used = 211.20 MB)\nI0000 00:00:1749713979.450836   11016 search.cc:308] Root node processed (time = 0 ms, constraints = 296, memory used = 211.20 MB)\nI0000 00:00:1749713979.453392   11016 search.cc:308] Solution #0 (259155, time = 2 ms, branches = 34, failures = 1, depth = 33, memory used = 211.31 MB, limit = 10%)\nI0000 00:00:1749713979.454889   11016 search.cc:308] Solution #1 (253321, improvement rate = -2251.16%/s, maximum = 259155, time = 4 ms, branches = 38, failures = 3, depth = 33, Relocate<1>, neighbors = 328, filtered neighbors = 1, accepted neighbors = 1, memory used = 211.34 MB, limit = 20%)\nI0000 00:00:1749713979.458823   11016 search.cc:308] Solution #2 (253169, improvement rate = -20.001%/s, maximum = 259155, time = 8 ms, branches = 43, failures = 5, depth = 33, Relocate<1>, neighbors = 1103, filtered neighbors = 2, accepted neighbors = 2, memory used = 211.34 MB, limit = 30%)\nI0000 00:00:1749713979.459988   11016 search.cc:308] Solution #3 (250330, improvement rate = -1121.39%/s, maximum = 259155, time = 9 ms, branches = 47, failures = 7, depth = 33, Relocate<1>, neighbors = 1316, filtered neighbors = 3, accepted neighbors = 3, memory used = 211.34 MB, limit = 40%)\nI0000 00:00:1749713979.460289   11016 search.cc:308] Solution #4 (245506, improvement rate = -4.824e+08%/s, maximum = 259155, time = 9 ms, branches = 53, failures = 9, depth = 33, Relocate<1>, neighbors = 1344, filtered neighbors = 4, accepted neighbors = 4, memory used = 211.35 MB, limit = 50%)\nI0000 00:00:1749713979.460762   11016 search.cc:308] Solution #5 (231958, improvement rate = -1.3548e+09%/s, maximum = 259155, time = 10 ms, branches = 57, failures = 11, depth = 33, Relocate<1>, neighbors = 1593, filtered neighbors = 5, accepted neighbors = 5, memory used = 211.35 MB, limit = 60%)\nI0000 00:00:1749713979.461377   11016 search.cc:308] Solution #6 (230865, improvement rate = -1.093e+08%/s, maximum = 259155, time = 10 ms, branches = 62, failures = 13, depth = 33, Relocate<1>, neighbors = 1634, filtered neighbors = 6, accepted neighbors = 6, memory used = 211.35 MB, limit = 70%)\nI0000 00:00:1749713979.461880   11016 search.cc:308] Solution #7 (229544, improvement rate = -1.321e+08%/s, maximum = 259155, time = 11 ms, branches = 66, failures = 15, depth = 33, Relocate<1>, neighbors = 1677, filtered neighbors = 7, accepted neighbors = 7, memory used = 211.35 MB, limit = 80%)\nI0000 00:00:1749713979.462785   11016 search.cc:308] Solution #8 (226298, improvement rate = -3.246e+08%/s, maximum = 259155, time = 12 ms, branches = 73, failures = 17, depth = 33, Relocate<1>, neighbors = 1734, filtered neighbors = 8, accepted neighbors = 8, memory used = 211.36 MB, limit = 90%)\nI0000 00:00:1749713979.463408   11016 search.cc:308] Solution #9 (226044, improvement rate = -2.54e+07%/s, maximum = 259155, time = 12 ms, branches = 77, failures = 19, depth = 33, Relocate<1>, neighbors = 1832, filtered neighbors = 9, accepted neighbors = 9, memory used = 211.36 MB, limit = 100%)\nI0000 00:00:1749713979.463544   11016 search.cc:308] Finished search tree (time = 12 ms, branches = 77, failures = 51, neighbors = 1832, filtered neighbors = 9, accepted neigbors = 9, memory used = 211.36 MB)\nI0000 00:00:1749713979.463623   11016 search.cc:308] End search (time = 13 ms, branches = 77, failures = 51, memory used = 211.36 MB, speed = 5923 branches/s)\n"
+          "text": "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\nI0000 00:00:1750496156.405950   21004 search.cc:310] Start search (memory used = 129.43 MB)\nI0000 00:00:1750496156.406522   21004 search.cc:310] Root node processed (time = 0 ms, constraints = 296, memory used = 129.55 MB)\nI0000 00:00:1750496156.411035   21004 search.cc:310] Solution #0 (259155, time = 4 ms, branches = 34, failures = 1, depth = 33, memory used = 130.04 MB, limit = 10%)\nI0000 00:00:1750496156.412910   21004 search.cc:310] Solution #1 (253321, improvement rate = -2251.16%/s, maximum = 259155, time = 6 ms, branches = 38, failures = 3, depth = 33, Relocate<1>, neighbors = 328, filtered neighbors = 1, accepted neighbors = 1, memory used = 130.27 MB, limit = 20%)\nI0000 00:00:1750496156.418117   21004 search.cc:310] Solution #2 (253169, improvement rate = -12.0006%/s, maximum = 259155, time = 11 ms, branches = 43, failures = 5, depth = 33, Relocate<1>, neighbors = 1103, filtered neighbors = 2, accepted neighbors = 2, memory used = 130.32 MB, limit = 30%)\nI0000 00:00:1750496156.419453   21004 search.cc:310] Solution #3 (250330, improvement rate = -1121.39%/s, maximum = 259155, time = 13 ms, branches = 47, failures = 7, depth = 33, Relocate<1>, neighbors = 1316, filtered neighbors = 3, accepted neighbors = 3, memory used = 130.36 MB, limit = 40%)\nI0000 00:00:1750496156.419788   21004 search.cc:310] Solution #4 (245506, improvement rate = -4.824e+08%/s, maximum = 259155, time = 13 ms, branches = 53, failures = 9, depth = 33, Relocate<1>, neighbors = 1344, filtered neighbors = 4, accepted neighbors = 4, memory used = 130.36 MB, limit = 50%)\nI0000 00:00:1750496156.420657   21004 search.cc:310] Solution #5 (231958, improvement rate = -1.3548e+09%/s, maximum = 259155, time = 14 ms, branches = 57, failures = 11, depth = 33, Relocate<1>, neighbors = 1593, filtered neighbors = 5, accepted neighbors = 5, memory used = 130.37 MB, limit = 60%)\nI0000 00:00:1750496156.420962   21004 search.cc:310] Solution #6 (230865, improvement rate = -1.093e+08%/s, maximum = 259155, time = 14 ms, branches = 62, failures = 13, depth = 33, Relocate<1>, neighbors = 1634, filtered neighbors = 6, accepted neighbors = 6, memory used = 130.37 MB, limit = 70%)\nI0000 00:00:1750496156.421270   21004 search.cc:310] Solution #7 (229544, improvement rate = -1.321e+08%/s, maximum = 259155, time = 14 ms, branches = 66, failures = 15, depth = 33, Relocate<1>, neighbors = 1677, filtered neighbors = 7, accepted neighbors = 7, memory used = 130.38 MB, limit = 80%)\nI0000 00:00:1750496156.421623   21004 search.cc:310] Solution #8 (226298, improvement rate = -3.246e+08%/s, maximum = 259155, time = 15 ms, branches = 73, failures = 17, depth = 33, Relocate<1>, neighbors = 1734, filtered neighbors = 8, accepted neighbors = 8, memory used = 130.38 MB, limit = 90%)\nI0000 00:00:1750496156.422061   21004 search.cc:310] Solution #9 (226044, improvement rate = -2.54e+07%/s, maximum = 259155, time = 15 ms, branches = 77, failures = 19, depth = 33, Relocate<1>, neighbors = 1832, filtered neighbors = 9, accepted neighbors = 9, memory used = 130.39 MB, limit = 100%)\nI0000 00:00:1750496156.422180   21004 search.cc:310] Finished search tree (time = 15 ms, branches = 77, failures = 51, neighbors = 1832, filtered neighbors = 9, accepted neigbors = 9, memory used = 130.39 MB)\nI0000 00:00:1750496156.422232   21004 search.cc:310] End search (time = 15 ms, branches = 77, failures = 51, memory used = 130.39 MB, speed = 5133 branches/s)\n"
         }
       ]
     },
     {
       "id": "BYtC",
-      "code_hash": "9241819603eeee3285b124bfef6c4148",
+      "code_hash": "542dd273f6e2cff6a5da721145e40d52",
       "outputs": [
         {
           "type": "data",
@@ -157,7 +151,7 @@
     },
     {
       "id": "RGSE",
-      "code_hash": "b731d436f62bc07cee91d5e347058105",
+      "code_hash": "bdb8f7ce4e9b3957d7a2be7e65b1ba64",
       "outputs": [
         {
           "type": "data",
@@ -176,9 +170,37 @@
     },
     {
       "id": "Kclp",
-      "code_hash": "e81f6997991c07559cd3f536e1161d90",
-      "outputs": [],
-      "console": []
+      "code_hash": "b46a71d9201090069b9ce03cd9587a5e",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/plain": ""
+          }
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "\n=== KAPAZIT\u00c4TS-ANALYSE (Heuristik) ===\nDemands (Heuristik): [0, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]\nAnzahl Knoten (inkl. Hub) (Heuristik): 41\nGesamtbedarf (Heuristik): 4000\nFahrzeugkapazit\u00e4t: 250\nAnzahl Fahrzeuge: 15\nGesamtkapazit\u00e4t: 3750\nKapazit\u00e4t ausreichend: False\n"
+        },
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "I0000 00:00:1750496156.695837   21004 search.cc:310] Start search (memory used = 134.71 MB)\nI0000 00:00:1750496156.696175   21004 search.cc:310] Root node processed (time = 0 ms, constraints = 300, memory used = 134.71 MB)\n"
+        },
+        {
+          "type": "stream",
+          "name": "stdout",
+          "text": "Keine L\u00f6sung gefunden (Heuristik).\n"
+        },
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "I0000 00:00:1750496166.695136   21004 search.cc:310] Finished search tree (time = 9999 ms, branches = 993733, failures = 496909, memory used = 133.93 MB)\nI0000 00:00:1750496166.695294   21004 search.cc:310] End search (time = 9999 ms, branches = 993733, failures = 496909, memory used = 133.94 MB, speed = 99383 branches/s)\n"
+        }
+      ]
     }
   ]
 }

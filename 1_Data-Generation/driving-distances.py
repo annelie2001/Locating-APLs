@@ -1,8 +1,6 @@
-
-
 import marimo
 
-__generated_with = "0.13.2"
+__generated_with = "0.13.15"
 app = marimo.App(width="medium")
 
 
@@ -18,8 +16,8 @@ def _():
 @app.function
 def normalize_coords(coords):
     """
-    Normalisiert Koordinaten in (lon, lat)-Tupel-Format.
-    Unterstützt Listen, Tupel und Strings wie "(lon, lat)" oder "lon,lat".
+    Normalizes coordinates in (lon, lat) tuple format.
+    Supports lists, tuples and strings such as “(lon, lat)” or “lon,lat”.
     """
     normalized = []
 
@@ -36,15 +34,15 @@ def normalize_coords(coords):
                 if len(parts) == 2:
                     lon, lat = float(parts[0]), float(parts[1])
                 else:
-                    raise ValueError("String konnte nicht in zwei Teile zerlegt werden")
+                    raise ValueError("String could not be devided in two parts")
 
             else:
-                raise ValueError("Nicht unterstützter Typ")
+                raise ValueError("Type not supported")
 
             normalized.append((lon, lat))
 
         except Exception as e:
-            print(f"⚠️  Warnung: Koordinate im falschen Format übersprungen: {coord} ({e})")
+            print(f"Warning: Coordinate in wrong format skipped: {coord} ({e})")
 
     return normalized
 
@@ -64,7 +62,7 @@ def _(gpd, requests):
         snap_response.raise_for_status()
         hub_coord_snapped = snap_response.json()["waypoints"][0]["location"]
     except Exception as e:
-        print(f"Fehler beim Snappen: {e}")
+        print(f"Snapping error: {e}")
 
     #-----------------------------
     # Load snapped APL coordinates
@@ -78,7 +76,7 @@ def _(gpd, requests):
 
     apl_coords = normalize_coords(apl_coords)
     hub_coord_snapped = normalize_coords([hub_coord_snapped])[0]
-    print("Snapped Hub-Koordinate:", hub_coord_snapped)
+    print("Snapped hub-coordinate:", hub_coord_snapped)
 
     apl_coords.append(hub_coord_snapped)
     apl_ids.append(HUB_ID)
@@ -115,7 +113,7 @@ def _(apl_ids, coord_string, pd, requests):
 
     url = f"http://localhost:5000/table/v1/driving/{coord_string}?annotations=distance"
 
-    print("Sende Anfrage an OSRM für Distanzmatrix...")
+    print("Send request to OSRM for distance matrix...")
 
     try:
         response = requests.get(url)
@@ -123,7 +121,7 @@ def _(apl_ids, coord_string, pd, requests):
         data = response.json()
         distance_matrix = data["distances"]
     except Exception as e:
-        print(f"Fehler beim Abrufen der Distanzmatrix: {e}")
+        print(f"Error retrieving the distance matrix: {e}")
         distance_matrix = []
 
     # Als DataFrame speichern
@@ -131,7 +129,7 @@ def _(apl_ids, coord_string, pd, requests):
     df_dist.index.name = "from_apl"
 
     df_dist.to_csv("./Data/cvrp_distance_matrix.csv", sep=";")
-    print(f"Distanzmatrix gespeichert")
+    print(f"Saved distance matrix")
     return
 
 
@@ -144,7 +142,7 @@ def _(coord_string_heuristic, heuristic_ids, pd, requests):
 
     url_h = f"http://localhost:5000/table/v1/driving/{coord_string_heuristic}?annotations=distance"
 
-    print("Sende Anfrage an OSRM für Distanzmatrix...")
+    print("Send request to OSRM for distance matrix...")
 
     try:
         response_h = requests.get(url_h)
@@ -152,7 +150,7 @@ def _(coord_string_heuristic, heuristic_ids, pd, requests):
         data_h = response_h.json()
         distance_matrix_heuristic = data_h["distances"]
     except Exception as e:
-        print(f"Fehler beim Abrufen der Distanzmatrix: {e}")
+        print(f"Error retrieving the distance matrix: {e}")
         distance_matrix_heuristic = []
 
     # Als DataFrame speichern
@@ -161,7 +159,7 @@ def _(coord_string_heuristic, heuristic_ids, pd, requests):
 
     df_dist_h.to_csv("./Data/cvrp_distance_matrix_heuristic.csv", sep=";")
     print(df_dist_h.shape)
-    print(f"Distanzmatrix gespeichert")
+    print(f"Saved distance matrix")
     return
 
 

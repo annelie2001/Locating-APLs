@@ -1,8 +1,6 @@
-
-
 import marimo
 
-__generated_with = "0.13.2"
+__generated_with = "0.13.15"
 app = marimo.App(width="medium")
 
 
@@ -30,11 +28,11 @@ def _(gpd):
 def _(OSRM_URL, requests, tqdm):
     def snap_points_osrm(gdf, mode="foot"):
         """
-        Snappt Punkte eines GeoDataFrames an das nächstgelegene routbare Netzwerk mit OSRM.
+        Snaps points of a GeoDataFrame to the nearest routable network with OSRM.
 
-        :param gdf: GeoDataFrame mit Punkt-Geometrien (WGS84)
-        :param mode: "foot" oder "car"
-        :return: Liste von (lon, lat) Tuples
+        :param gdf: GeoDataFrame with point geometries (WGS84)
+        :param mode: "foot" or "car"
+        :return: List of (lon, lat) tuples
         """
         snapped_coords = []
 
@@ -50,7 +48,7 @@ def _(OSRM_URL, requests, tqdm):
                 snapped_coords.append(snapped_coord)
             except Exception as e:
                 print(f"Fehler beim Snappen von Punkt {lon},{lat}: {e}")
-                snapped_coords.append((lon, lat))  # Fallback: Originalposition
+                snapped_coords.append((lon, lat))  # Fallback: Original position
 
         return snapped_coords
     return (snap_points_osrm,)
@@ -58,14 +56,14 @@ def _(OSRM_URL, requests, tqdm):
 
 @app.cell
 def _(apl_gdf, customer_gdf, heuristic_gdf, snap_points_osrm):
-    # APL-Koordinaten
+    # APL coordinates
     apl_gdf["coord_foot"] = snap_points_osrm(apl_gdf, mode="foot")
     apl_gdf["coord_car"] = snap_points_osrm(apl_gdf, mode="car")
 
-    #APL-Koordinaten from Heuristic
+    #APL coordinates from heuristic
     heuristic_gdf["coord_car"] = snap_points_osrm(heuristic_gdf, mode="car")
 
-    # Kunden-Koordinaten
+    # Customer coordinates
     customer_gdf["coord_foot"] = snap_points_osrm(customer_gdf, mode="foot")
     return
 

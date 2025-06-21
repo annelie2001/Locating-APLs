@@ -1,8 +1,6 @@
-
-
 import marimo
 
-__generated_with = "0.13.2"
+__generated_with = "0.13.15"
 app = marimo.App(width="medium")
 
 
@@ -72,7 +70,7 @@ def _(heuristic_results_df, pd, total_demand_per_period, wuerzburg_gdf_300m):
         df["Period"] = period
         dfs.append(df)
 
-    # Verbinde alle DataFrames in der Liste zu einem einzigen DataFrame
+    # Merge all DataFrames in dfs
     heuristic_results_df_expanded = pd.concat(dfs, ignore_index=True)
     return demand_jt_df, periods
 
@@ -99,14 +97,14 @@ def _(defaultdict, np, periods):
         overloaded_counts = []
         overloaded_demands = []
 
-        # 1. Ermittle die zugeordneten Kunden
+        # 1. Determine assigend customers
         assigned_customers = set(results_df["Customer_ID"].unique())
 
-        # 2. Ermittle die nicht zugeordneten Zellen
+        # 2. Determine unassigned customers 
         all_cells = set(demand_jt_df["j"].unique())
         unassigned_cells = all_cells - assigned_customers
 
-        print(f"Anzahl nicht zugeordneter Zellen: {len(unassigned_cells)}")
+        print(f"Number of unassigned cells: {len(unassigned_cells)}")
 
         # Build a structure: {(t, apl): [assigned_customers]}
         assignment_map = defaultdict(list)
@@ -135,7 +133,7 @@ def _(defaultdict, np, periods):
                     ]["sample"].sum()
                     apl_demand[(t, apl)] += demand_val
 
-            # 3. Berechne die nicht erfüllte Nachfrage pro Periode
+            # 3. Calculate unfulfilled demand per period
             unassigned_demand = defaultdict(float)
             for t in periods:
                 for j in unassigned_cells:
@@ -156,15 +154,13 @@ def _(defaultdict, np, periods):
                 if total_apl_demand > cap:
                     overloads += 1
                     overloads_demand += total_apl_demand-cap
-                    # print(f"⚠️ Demand not satisfied: {total_apl_demand-cap}")
-
-            # Berücksichtige die nicht erfüllte Nachfrage als zusätzliche "Überlast"
+                
+            # Consider the unfulfilled demand as an additional “overload”
             for t, demand in unassigned_demand.items():
                 total += 1
                 overloads += 1
                 total_demand += total_apl_demand
                 overloads_demand += total_apl_demand            
-                # print(f"⚠️ Demand not satisfied: {total_apl_demand}")
 
             reliability_counts = 1 - (overloads / total)
             reliability_demands = 1- (overloads_demand / total_demand)
