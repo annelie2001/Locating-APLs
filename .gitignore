@@ -177,5 +177,10 @@ cython_debug/
 Data/OSRM-Unterfranken/
 Data/Zensus_Bevoelkerung_100m-Gitter.csv
 Data/distances.npy
+
+# Ordner
 venv-cplex/
 __marimo__/
+__marimo__/session/
+__marimo__/cache/
+layouts/

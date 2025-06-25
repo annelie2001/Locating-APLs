@@ -19,7 +19,6 @@ def _():
     import pysd
     import numpy as np
     from dotenv import load_dotenv
-    from pathlib import Path
     import os
     return (
         Fullscreen,
@@ -174,19 +173,19 @@ def _(gpd, mo):
 
 
 @app.cell
-def _(mo):
+def _(mo, packstations):
     mo.md(
-        r"""
+        f"""
     #Würzburg Status Quo: Population and APL Landscape
 
     ##Population Map Würzburg
 
-    Before starting the project, I created this interactive map to get an intuition for the problem. The map shows the population density of the city of Würzburg at the level of 100m x 100m grid cells according to the Zensus 2022 data. Additionally, you can activate to layers:
+    Before starting the project, I created this interactive map to get an intuition for the problem. The map shows the population density of the city of Würzburg at the level of 100m x 100m grid cells according to the Zensus 2022 data. Additionally, you can activate two layers:
 
     * **DHL 'Packstationen':** The locations of existing DHL parcel lockers serve as a qualitative real-world benchmark (There are currently {(len(packstations))} DHL parcel lockers in Würzburg)
     * **Heuristic APL locations:** As a second, quantitative benchmark, I applied a heurisitc method based on population density to identify potentially optimal APL locations. This method places APLs in the most densely populated areas while maintaining a minimum distance between locations. You can setup APLs according to this heuristic with the interactive slider.
 
-    When setting up approximately 40 APLs with the heuristic approach, the placement already looks pretty similar to the DHL setup. In the following, I will evaluate whether a more sophisticated optimization approach results in better reliability and cost-efficiency compare to the simple benchmark.
+    When setting up approximately 40 APLs with the heuristic approach, the placement already looks pretty similar to the DHL setup. In the following, I will evaluate whether a more sophisticated optimization approach results in better reliability and cost-efficiency compared to the simple benchmark.
     """
     )
     return
@@ -539,8 +538,10 @@ def _(mo, pd):
         To evaluate different APL placement strategies, I conducted a comprehensive reliability and cost analysis across a variety of parameter settings and demand scenarios. I defined a base case and then systematically altered one parameter at a time in the subsequent test cases.
 
         For reliability evaluation I conducted a **Monte Carlo Simulation**:
+    
         * For each of the 100 simulation runs, I generated random demand values for each grid cell and time period. 
         * These values were drawn from a normal distribution, using the SD model output as the expected value and a standard deviation of 20%, and distributed proportionally to the population density of each customer cell.
+    
         If an APL’s capacity was exceeded, I recorded both the frequency of overloads and the amount of unsatisfied demand. From this, I derived a **Combined Reliability** score
 
         The **Combined Costs** consist of the setup costs, derived in the CFLP and the variable delivery costs. I calculated the delivery costs using real-life routes, derived from the Open Source Routing Machine (OSRM) API and a **Capacitated Vehicle Routing Problem (CVRP)**.

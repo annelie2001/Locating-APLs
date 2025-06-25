@@ -2,9 +2,11 @@
 
 ## Research Context
 
-This repository contains the full implementation of the simulation-optimization framework developed for my seminar paper in the master's program Information Systems at the Chair of Business Analytics, University of Würzburg. The central research question is how to efficiently allocate APLs in a way that minimizes setup and delivery costs while satisfying uncertain, spatially distributed demand under capacity constraints. To this end, I follow an adapted version of the integrated simulation-optimization approach proposed by [Rabe et al. (2020)](http://dx.doi.org/10.1109/WSC48552.2020.9384087).
+This repository contains the full implementation of the simulation-optimization framework developed for my seminar paper in the master's program Information Systems at the Chair of Business Analytics, University of Würzburg. The central research question is how to efficiently allocate APLs in a way that minimizes total last-mile delivery costs while satisfying uncertain, spatially distributed demand under capacity constraints. To this end, I follow an adapted version of the integrated simulation-optimization approach proposed by [Rabe et al. (2020)](http://dx.doi.org/10.1109/WSC48552.2020.9384087).
 
 ## Simulation-Optimization Framework
+
+The proposed framework includes the following steps:
 
 - 📦 Simulating multi-period demand using a System Dynamics (SD) model
 - 📈 Generating stochastic demand scenarios based on the SD results
