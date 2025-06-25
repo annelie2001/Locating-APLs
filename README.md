@@ -28,10 +28,10 @@ The proposed framework includes the following steps:
 ## Technologies Used
 (see requirements.txt)
 
-- Marimo – Used to build interactive notebooks for visualizing and analyzing results.
-- IBM ILOG CPLEX – Applied to solve the CFLP.
-- Google OR-Tools – Used for solving the CVRP based on real road distances.
-- Docker – Employed to run a local OSRM (Open Source Routing Machine) server for calculating realistic walking and driving distances.
+- Marimo – Used to build interactive notebooks for visualizing and analyzing results
+- IBM ILOG CPLEX – Applied to solve the CFLP
+- Google OR-Tools – Used for solving the CVRP based on real road distances
+- Docker – Employed to run a local OSRM (Open Source Routing Machine) server for calculating realistic walking and driving distances
 
 ## Contact
 
