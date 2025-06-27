@@ -7,7 +7,6 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import marimo as mo
-    import requests
     import json
     import folium
     from folium.plugins import Fullscreen
@@ -18,23 +17,7 @@ def _():
     import branca.colormap as cm
     import pysd
     import numpy as np
-    from dotenv import load_dotenv
-    import os
-    return (
-        Fullscreen,
-        alt,
-        cm,
-        folium,
-        gpd,
-        json,
-        load_dotenv,
-        mo,
-        np,
-        os,
-        pd,
-        pysd,
-        requests,
-    )
+    return Fullscreen, alt, cm, folium, gpd, json, mo, np, pd, pysd
 
 
 @app.cell
@@ -87,54 +70,14 @@ def _(gpd, np, pd, pysd):
 
 
 @app.cell
-def _(json, load_dotenv, os, requests):
-    # DHL data Würzburg
-    latitude = 49.7913
-    longitude = 9.9534
+def _(json):
+    # Load DHL-Packstationen
+    with open('./Data/dhl-parcel-lockers_wuerzburg.json', 'r', encoding='utf-8') as f:
+        packstations = json.load(f)
 
-    load_dotenv()
-    dhl_api_key = os.getenv("SECRET_KEY_DHL")
-
-    url = 'https://api.dhl.com/location-finder/v1/find-by-geo'
-    headers = {
-        'DHL-API-Key': dhl_api_key,
-        'Accept': 'application/json'
-    }
-
-    # request parameters
-    params_dhl = {
-        'latitude': latitude,
-        'longitude': longitude,
-        'radius': 5000,  
-        'limit': 50,
-        'locationType': 'locker'
-    }
-
-    response_dhl = requests.get(url, headers=headers, params=params_dhl)
-
-    packstations = []
-    if response_dhl.status_code == 200:
-        data_dhl = response_dhl.json()
-        for location in data_dhl.get('locations', []):
-            geo = location.get('place', {}).get('geo', {})
-            address = location.get('place', {}).get('address', {})
-            lat = geo.get('latitude')
-            lon = geo.get('longitude')
-
-            if lat and lon:
-                packstations.append({
-                    'name': location.get('name', 'Packstation'),
-                    'lat': lat,
-                    'lon': lon,
-                    'address': f"{address.get('streetAddress', '')}, {address.get('postalCode', '')} {address.get('addressLocality', '')}"
-                })
-        with open('./Data/dhl-parcel-lockers_wuerzburg.json', 'w', encoding='utf-8') as f:
-            json.dump(packstations, f, ensure_ascii=False, indent=2)
-
-        print("Packstationen gespeichert.")
-
-    else:
-        print(f"Fehler beim Abrufen der Packstationen: {response_dhl.status_code} - {response_dhl.text}")
+    # Jetzt ist `packstations` wieder eine Liste von Dicts
+    print(f"{len(packstations)} Packstationen geladen.")
+    print(packstations[0])  # Beispielausgabe einer Station
     return (packstations,)
 
 
@@ -538,10 +481,10 @@ def _(mo, pd):
         To evaluate different APL placement strategies, I conducted a comprehensive reliability and cost analysis across a variety of parameter settings and demand scenarios. I defined a base case and then systematically altered one parameter at a time in the subsequent test cases.
 
         For reliability evaluation I conducted a **Monte Carlo Simulation**:
-    
+
         * For each of the 100 simulation runs, I generated random demand values for each grid cell and time period. 
         * These values were drawn from a normal distribution, using the SD model output as the expected value and a standard deviation of 20%, and distributed proportionally to the population density of each customer cell.
-    
+
         If an APL’s capacity was exceeded, I recorded both the frequency of overloads and the amount of unsatisfied demand. From this, I derived a **Combined Reliability** score
 
         The **Combined Costs** consist of the setup costs, derived in the CFLP and the variable delivery costs. I calculated the delivery costs using real-life routes, derived from the Open Source Routing Machine (OSRM) API and a **Capacitated Vehicle Routing Problem (CVRP)**.
